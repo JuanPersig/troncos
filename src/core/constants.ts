@@ -1,47 +1,50 @@
 /**
- * Jumping Friends — Global Constants
+ * Jumping Friends — Global Constants & Theme Colors
+ * Minigame Palette: Celestes (Sky Blue), Naranjas (Orange), Amarillos (Yellow), Blancos (White)
  */
 
 export const COLORS = {
-  // Primary palette
-  darkBg: '#0c180e',
-  forestDark: '#142416',
-  forest: '#1e3a24',
-  leafDark: '#438a22',
-  leaf: '#73c242',
-  lightLeaf: '#9adb5e',
+  // Backgrounds (Dark Celestial / Navy Blue)
+  bgDarkest: '#0b1320',
+  bgDark: '#111f35',
+  bgPanel: '#182a47',
+  bgCard: '#1e3456',
 
-  // Wood / warm tones
-  woodDark: '#1a0e05',
-  bark: '#2b180a',
-  wood: '#4a2e18',
-  woodLight: '#7c4f2b',
-  sand: '#d4a373',
+  // Celestes (Sky Blue / Cyan)
+  skyLight: '#e0f2fe',
+  skyBright: '#38bdf8',
+  skyMain: '#0ea5e9',
+  skyDark: '#0284c7',
+
+  // Naranjas (Orange)
+  orangeLight: '#ffedd5',
+  orangeBright: '#ff7d1a',
+  orangeMain: '#f97316',
+  orangeDark: '#ea580c',
+
+  // Amarillos (Yellow)
+  yellowLight: '#fef9c3',
+  yellowBright: '#ffe033',
+  yellowMain: '#facc15',
+  yellowDark: '#ca8a04',
+
+  // Blancos / Grises (White / Light Slate)
+  white: '#ffffff',
+  offWhite: '#f8fafc',
+  slateLight: '#cbd5e1',
+  slateMuted: '#64748b',
 
   // Accents
-  golden: '#f4d160',
-  goldenDark: '#e6a800',
-  cyan: '#38ef7d',
-  pink: '#ff4081',
-  orange: '#ff8c42',
-
-  // UI
-  textPrimary: '#e0f8cf',
-  textSecondary: '#73c242',
-  textMuted: '#5a7a5a',
-  error: '#ff4444',
-  white: '#ffffff',
+  error: '#ef4444',
   black: '#000000',
 } as const;
 
 export const PLAYER_COLORS = [
-  { primary: '#38ef7d', secondary: '#11998e', shirt: '#00c2cb', tag: 'P1', name: 'Verde' },
-  { primary: '#ff4081', secondary: '#c2185b', shirt: '#ff80ab', tag: 'P2', name: 'Rosa' },
-  { primary: '#f4d160', secondary: '#e67e22', shirt: '#f39c12', tag: 'P3', name: 'Amarillo' },
-  { primary: '#ff8c42', secondary: '#d4622b', shirt: '#ffb366', tag: 'P4', name: 'Naranja' },
+  { primary: '#38bdf8', secondary: '#0284c7', shirt: '#7dd3fc', tag: 'P1', name: 'Celeste' },
+  { primary: '#ff7d1a', secondary: '#c2410c', shirt: '#ffedd5', tag: 'P2', name: 'Naranja' },
+  { primary: '#facc15', secondary: '#a16207', shirt: '#fef08a', tag: 'P3', name: 'Amarillo' },
+  { primary: '#a855f7', secondary: '#7e22ce', shirt: '#e9d5ff', tag: 'P4', name: 'Púrpura' },
 ] as const;
 
 export const MAX_PLAYERS_DEFAULT = 3;
-
-export const SERVER_PORT = 3001;
-export const DEV_PORT = 3000;
+export const DEFAULT_MINIGAME_ID = 'jump-logs';

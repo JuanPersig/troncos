@@ -4,7 +4,6 @@ import { socketService } from '@/services/socket';
 import { webRTCManager } from '@/services/webrtc';
 import { cameraService } from '@/services/camera';
 import { useMotionDetector } from '@/motion/useMotionDetector';
-import { ConnectionStatus } from '@/components/ConnectionStatus';
 import { CountdownOverlay } from '@/components/CountdownOverlay';
 
 // Screens
@@ -20,14 +19,14 @@ import { SettingsScreen } from '@/screens/SettingsScreen';
 
 export const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('splash');
-  const [playerName, setPlayerName] = useState<string>(() => localStorage.getItem('jf_player_name') || `Jugador${Math.floor(Math.random() * 1000)}`);
+  const [playerName, setPlayerName] = useState<string>(() => localStorage.getItem('jf_player_name') || `Jugador${Math.floor(Math.random() * 900 + 100)}`);
   
   const [roomCode, setRoomCode] = useState<string>('');
   const [playerSlot, setPlayerSlot] = useState<number | null>(null);
   const [players, setPlayers] = useState<PlayerInfo[]>([]);
   const [hostId, setHostId] = useState<string>('');
   const [isConnected, setIsConnected] = useState<boolean>(false);
-  const [selectedGame, setSelectedGame] = useState<string | null>(null);
+  const [selectedGame, setSelectedGame] = useState<string>('jump-logs');
   
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStreams, setRemoteStreams] = useState<Record<number, MediaStream>>({});
@@ -70,35 +69,37 @@ export const App: React.FC = () => {
       setTimeout(() => setErrorMsg(''), 3000);
     });
 
-    socket.on('room-joined', ({ roomCode, players, hostId, slot }) => {
+    socket.on('room-joined', ({ roomCode, players, hostId, playerSlot: slot, selectedGame: sg }) => {
       setRoomCode(roomCode);
       setPlayers(players);
       setHostId(hostId);
       setPlayerSlot(slot);
+      if (sg) setSelectedGame(sg);
       
-      // Initialize WebRTC signaling now that we have a slot
       webRTCManager.initSignaling(slot);
       setCurrentScreen('lobby');
     });
 
-    socket.on('room-update', ({ players, hostId, selectedGame }) => {
+    socket.on('room-update', ({ players, hostId, selectedGame: sg }) => {
       setPlayers(players);
       setHostId(hostId);
-      if (selectedGame !== undefined) setSelectedGame(selectedGame);
+      if (sg) setSelectedGame(sg);
     });
 
-    socket.on('game-started', () => {
+    socket.on('game-started', ({ selectedGame: sg }) => {
+      if (sg) setSelectedGame(sg);
       setCountdown(3);
+      
       const timer = setInterval(() => {
         setCountdown((prev) => {
-          if (prev === null || prev <= 0) {
+          if (prev === null || prev <= 1) {
             clearInterval(timer);
-            if (prev === 0) setCurrentScreen('game');
+            setCurrentScreen('game');
             return null;
           }
           return prev - 1;
         });
-      }, 1000);
+      }, 900);
     });
 
     socket.on('game-results', (results: GameResults) => {
@@ -106,12 +107,10 @@ export const App: React.FC = () => {
       setCurrentScreen('results');
     });
 
-    // WebRTC connection logic
     const setupPeers = () => {
       if (playerSlot === null) return;
       players.forEach(p => {
         if (p.slot !== playerSlot && !p.isBot) {
-          // Everyone tries to connect to peers with a greater slot to avoid glare offers
           if (playerSlot < p.slot) {
             webRTCManager.connectToPeer(p.id, p.slot, playerSlot);
           }
@@ -119,7 +118,6 @@ export const App: React.FC = () => {
       });
     };
     
-    // Call setupPeers when players update
     setupPeers();
 
     const cleanupRemoteStream = webRTCManager.onRemoteStream((slot, stream) => {
@@ -143,7 +141,7 @@ export const App: React.FC = () => {
     localStorage.setItem('jf_player_name', name);
   };
 
-  const isHost = hostId === socketService.getSocket().id;
+  const isHost = playerSlot !== null && players.find(p => p.slot === playerSlot)?.id === hostId;
 
   const renderScreen = () => {
     switch (currentScreen) {
@@ -203,6 +201,7 @@ export const App: React.FC = () => {
             currentSelection={selectedGame}
             onSelect={(gameId) => {
               socketService.selectGame(roomCode, gameId);
+              setSelectedGame(gameId);
               setCurrentScreen('lobby');
             }}
             onBack={() => setCurrentScreen('lobby')}
@@ -213,11 +212,11 @@ export const App: React.FC = () => {
           <GameScreen 
             roomCode={roomCode}
             players={players}
-            localSlot={playerSlot!}
+            localSlot={playerSlot ?? 0}
             isHost={isHost}
             localStream={localStream}
             remoteStreams={remoteStreams}
-            selectedGameId={selectedGame}
+            selectedGameId={selectedGame || 'jump-logs'}
             onGameEnd={(results) => socketService.sendGameEvent(roomCode, 'game-end', results)}
           />
         );
@@ -242,19 +241,19 @@ export const App: React.FC = () => {
       {currentScreen !== 'splash' && currentScreen !== 'game' && (
         <header className="app-header">
           <div className="app-header-inner">
-            <h1 className="text-xl text-golden pixel-text-shadow cursor-pointer" onClick={() => currentScreen !== 'lobby' && setCurrentScreen('main-menu')}>
-              JUMPING FRIENDS
+            <h1 className="text-lg text-yellow pixel-text-shadow cursor-pointer" onClick={() => currentScreen !== 'lobby' && setCurrentScreen('main-menu')}>
+              🎮 JUMPING FRIENDS
             </h1>
-            <div className="flex items-center gap-4">
-              {roomCode && <span className="text-sm text-cyan font-mono">SALA: {roomCode}</span>}
-              <span className="text-sm text-leaf">{playerName}</span>
+            <div className="flex items-center gap-3">
+              {roomCode && <span className="text-xs text-celeste font-mono">SALA: {roomCode}</span>}
+              <span className="text-xs text-orange">{playerName}</span>
             </div>
           </div>
         </header>
       )}
 
       {errorMsg && (
-        <div className="fixed top-20 w-full max-w-md" style={{ zIndex: 50, left: '50%', transform: 'translateX(-50%)' }}>
+        <div className="fixed top-14 w-full max-w-sm" style={{ zIndex: 50, left: '50%', transform: 'translateX(-50%)' }}>
           <div className="error-box">{errorMsg}</div>
         </div>
       )}

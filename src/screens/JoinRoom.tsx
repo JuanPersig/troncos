@@ -12,45 +12,47 @@ export const JoinRoom: React.FC<JoinRoomProps> = ({
   playerName,
   isConnected,
   onRoomJoined,
-  onBack
+  onBack,
 }) => {
-  const [roomCode, setRoomCode] = useState('');
+  const [inputCode, setInputCode] = useState('');
 
   const handleJoin = () => {
-    if (roomCode.trim().length >= 4) {
-      onRoomJoined(roomCode.trim().toUpperCase());
+    if (inputCode.trim()) {
+      onRoomJoined(inputCode.trim().toUpperCase());
     }
   };
 
   return (
     <div className="screen-center">
-      <div className="pixel-panel flex flex-col gap-6 w-full max-w-[400px]">
-        <h2 className="text-2xl text-golden text-center pixel-text-shadow">UNIRSE A SALA</h2>
-        
+      <div className="pixel-panel flex flex-col gap-4 w-full max-w-[400px]">
+        <h2 className="text-xl text-yellow text-center pixel-text-shadow">🚪 UNIRSE A SALA</h2>
+
         <div className="flex flex-col gap-2">
-          <label className="pixel-label">CÓDIGO DE SALA</label>
-          <input 
-            className="pixel-input text-center text-xl font-mono text-cyan" 
-            value={roomCode} 
-            onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-            placeholder="JF-XXXX"
-            maxLength={10}
-            autoFocus
+          <label className="pixel-label">INGRESA EL CÓDIGO</label>
+          <input
+            className="pixel-input text-center text-lg font-mono uppercase"
+            placeholder="EJ: JF-1234"
+            value={inputCode}
+            onChange={(e) => setInputCode(e.target.value.toUpperCase())}
             onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
+            autoFocus
           />
         </div>
 
-        <div className="flex flex-col gap-4 mt-4">
+        <div className="divider" />
+
+        <div className="flex gap-3">
           <PixelButton 
-            variant="golden" 
+            variant="celeste" 
             size="lg" 
-            className="w-full justify-center" 
-            disabled={!isConnected || roomCode.trim().length < 4}
+            className="flex-1 justify-center" 
+            disabled={!isConnected || !inputCode.trim()}
             onClick={handleJoin}
           >
             UNIRSE
           </PixelButton>
-          <PixelButton variant="danger" className="w-full justify-center" onClick={onBack}>
+
+          <PixelButton variant="danger" className="justify-center" onClick={onBack}>
             VOLVER
           </PixelButton>
         </div>

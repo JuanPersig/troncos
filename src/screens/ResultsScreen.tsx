@@ -1,85 +1,71 @@
 import React from 'react';
 import { GameResults } from '@/core/types';
 import { PixelButton } from '@/components/PixelButton';
-import { PLAYER_COLORS } from '@/core/constants';
 
 interface ResultsScreenProps {
   results: GameResults;
+  isHost: boolean;
   onBackToLobby: () => void;
   onPlayAgain: () => void;
-  isHost: boolean;
 }
 
 export const ResultsScreen: React.FC<ResultsScreenProps> = ({
   results,
+  isHost,
   onBackToLobby,
   onPlayAgain,
-  isHost
 }) => {
-  const sortedPlayers = [...results.players].sort((a, b) => {
-    if (a.isWinner && !b.isWinner) return -1;
-    if (!a.isWinner && b.isWinner) return 1;
-    return b.score - a.score;
-  });
+  const winner = results.players.find(p => p.isWinner) || results.players[0];
 
   return (
     <div className="screen-center">
-      <div className="screen-content-wide pixel-panel flex flex-col items-center gap-8 py-8">
-        <h1 className="text-4xl text-golden pixel-text-shadow-lg">🏆 RESULTADOS</h1>
-        <h2 className="text-xl text-cyan">{results.gameName}</h2>
-        
-        {/* Podium */}
-        <div className="flex items-end justify-center gap-4 h-[200px] mt-4">
-          {sortedPlayers.slice(0, 3).map((p, i) => {
-            const height = i === 0 ? '160px' : i === 1 ? '120px' : '90px';
-            const color = PLAYER_COLORS[p.slot]?.primary || 'white';
-            return (
-              <div key={p.slot} className="flex flex-col items-center gap-2">
-                <span className="text-sm font-bold" style={{ color }}>{p.name}</span>
-                <div 
-                  className="w-[80px] bg-[#142416] border-[4px] border-[#2b180a] flex items-start justify-center pt-2"
-                  style={{ height, borderColor: color }}
-                >
-                  <span className="text-xl text-golden">{i + 1}º</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      <div className="pixel-panel flex flex-col gap-4 w-full max-w-[500px]">
+        <h2 className="text-2xl text-yellow text-center pixel-text-shadow">🏆 RESULTADOS</h2>
+        <h3 className="text-sm text-celeste text-center font-mono">{results.gameName.toUpperCase()}</h3>
 
-        {/* Results Table */}
-        <div className="w-full max-w-[500px] flex flex-col gap-2 mt-4">
-          <div className="flex justify-between text-muted text-xs px-4 mb-2">
-            <span>JUGADOR</span>
-            <div className="flex gap-8">
-              <span>VIDAS</span>
-              <span>PUNTOS</span>
-            </div>
+        {/* Winner Highlight Box */}
+        {winner && (
+          <div className="p-4 bg-bg-darkest border-2 border-yellow text-center flex flex-col gap-2">
+            <span className="text-xs text-orange">👑 GANADOR DE LA PARTIDA 👑</span>
+            <span className="text-xl text-yellow font-bold">{winner.name}</span>
+            <span className="text-xs text-celeste">PUNTAJE: {winner.score} PTS</span>
           </div>
-          
-          {sortedPlayers.map((p) => (
-            <div key={p.slot} className={`player-slot ${p.isWinner ? 'border-golden bg-[#2a220a]' : ''}`}>
-              <div className="flex items-center gap-4">
-                <span className="text-lg" style={{ color: PLAYER_COLORS[p.slot]?.primary }}>{p.name}</span>
-                {p.isWinner && <span className="pixel-badge pixel-badge-golden">🥇 GANADOR</span>}
+        )}
+
+        {/* Leaderboard Table */}
+        <div className="flex flex-col gap-2 my-2">
+          {results.players.map((p, idx) => (
+            <div 
+              key={p.slot}
+              className={`flex items-center justify-between p-3 border ${p.isWinner ? 'bg-bg-light border-yellow' : 'bg-bg-dark border-sky-dark'}`}
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-yellow font-bold">#{idx + 1}</span>
+                <span className="text-sm text-white">{p.name}</span>
               </div>
-              <div className="flex gap-8 text-golden">
-                <span className="w-8 text-center">{p.livesRemaining}</span>
-                <span className="w-12 text-right">{p.score}</span>
+              <div className="flex items-center gap-4 text-xs font-mono">
+                <span className="text-celeste">{p.score} PTS</span>
+                <span className={p.livesRemaining > 0 ? 'text-green-400' : 'text-error'}>
+                  {p.livesRemaining > 0 ? '❤️ '.repeat(p.livesRemaining) : '💀 ELIMINADO'}
+                </span>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="flex gap-4 mt-8 w-full max-w-[500px]">
-          <PixelButton variant="wood" size="lg" className="flex-1 justify-center" onClick={onBackToLobby}>
-            VOLVER AL LOBBY
-          </PixelButton>
+        <div className="divider" />
+
+        {/* Action Buttons */}
+        <div className="flex gap-3">
           {isHost && (
-            <PixelButton variant="golden" size="lg" className="flex-1 justify-center" onClick={onPlayAgain}>
-              JUGAR DE NUEVO
+            <PixelButton variant="orange" size="lg" className="flex-1 justify-center" onClick={onPlayAgain}>
+              🔄 JUGAR DE NUEVO
             </PixelButton>
           )}
+
+          <PixelButton variant="celeste" className="flex-1 justify-center" onClick={onBackToLobby}>
+            VOLVER AL LOBBY
+          </PixelButton>
         </div>
       </div>
     </div>

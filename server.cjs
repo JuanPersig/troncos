@@ -5,10 +5,11 @@ const fs = require('fs');
 const { Server } = require('socket.io');
 
 const PORT = process.env.PORT || 3001;
+const DEFAULT_GAME = 'jump-logs';
 
 const app = express();
 
-// Health check endpoint (for Render/Railway diagnostics)
+// Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', app: 'Jumping Friends', rooms: Object.keys(rooms).length });
 });
@@ -19,10 +20,10 @@ if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
 }
 
-// Create HTTP server from Express
+// Create HTTP server
 const server = http.createServer(app);
 
-// Attach Socket.io AFTER creating the HTTP server
+// Attach Socket.io
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -33,18 +34,17 @@ const io = new Server(server, {
   path: '/socket.io/'
 });
 
-// SPA fallback: ONLY for GET requests, and NOT for socket.io paths
-// This must be AFTER socket.io is attached
+// SPA fallback
 app.get('/{*splat}', (req, res) => {
   const indexPath = path.join(distPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.status(404).send('Build not found. Run npm run build first.');
+    res.status(404).send('Build not found.');
   }
 });
 
-// Room State Storage
+// Room Storage
 const rooms = {};
 
 function generateSeed() {
@@ -67,7 +67,7 @@ io.on('connection', (socket) => {
         gameRunning: false,
         seed: generateSeed(),
         hostId: socket.id,
-        selectedGame: null,
+        selectedGame: DEFAULT_GAME,
         maxPlayers: 3,
         gameStartTime: null
       };
@@ -76,11 +76,10 @@ io.on('connection', (socket) => {
     const room = rooms[roomKey];
 
     if (room.players.length >= room.maxPlayers) {
-      socket.emit('error-message', `Room is full (max ${room.maxPlayers} players)`);
+      socket.emit('error-message', `La sala está llena (máximo ${room.maxPlayers} jugadores)`);
       return;
     }
 
-    // Determine next available slot (0 to maxPlayers - 1)
     const takenSlots = room.players.map(p => p.slot);
     let assignedSlot = 0;
     for (let i = 0; i < room.maxPlayers; i++) {
@@ -94,7 +93,7 @@ io.on('connection', (socket) => {
       id: socket.id,
       name: name || `Jugador ${assignedSlot + 1}`,
       slot: assignedSlot,
-      ready: false,
+      ready: true,
       lives: 3,
       score: 0,
       isBot: false
@@ -108,7 +107,6 @@ io.on('connection', (socket) => {
 
     console.log(`[JumpingFriends] [Room ${roomKey}] ${playerObj.name} joined slot ${assignedSlot}`);
 
-    // Notify user of successful join
     socket.emit('room-joined', {
       roomCode: roomKey,
       playerSlot: assignedSlot,
@@ -118,7 +116,6 @@ io.on('connection', (socket) => {
       maxPlayers: room.maxPlayers
     });
 
-    // Notify room of updated player list
     io.to(roomKey).emit('room-update', {
       players: room.players,
       hostId: room.hostId,
@@ -134,19 +131,15 @@ io.on('connection', (socket) => {
     const room = rooms[roomKey];
     room.players = room.players.filter(p => p.id !== socket.id);
     
-    console.log(`[JumpingFriends] [Room ${roomKey}] Player ${socket.id} explicitly left`);
-    
     socket.leave(roomKey);
     currentRoom = null;
     playerSlot = null;
 
     if (room.players.length === 0) {
-      console.log(`[JumpingFriends] Room ${roomKey} deleted (empty)`);
       delete rooms[roomKey];
     } else {
       if (room.hostId === socket.id) {
         room.hostId = room.players[0].id;
-        console.log(`[JumpingFriends] [Room ${roomKey}] Host migrated to ${room.hostId}`);
       }
       io.to(roomKey).emit('room-update', {
         players: room.players,
@@ -207,7 +200,6 @@ io.on('connection', (socket) => {
     if (!roomKey || !rooms[roomKey]) return;
     const room = rooms[roomKey];
     
-    // Only host can select a game
     if (room.hostId === socket.id) {
       room.selectedGame = gameId;
       console.log(`[JumpingFriends] [Room ${roomKey}] Game selected: ${gameId}`);
@@ -233,32 +225,24 @@ io.on('connection', (socket) => {
       p.score = 0;
     });
 
-    console.log(`[JumpingFriends] [Room ${roomKey}] Game Starting with seed ${room.seed}`);
+    console.log(`[JumpingFriends] [Room ${roomKey}] Game Starting: ${room.selectedGame} (seed: ${room.seed})`);
     io.to(roomKey).emit('game-started', {
       seed: room.seed,
-      players: room.players
+      players: room.players,
+      selectedGame: room.selectedGame
     });
   });
 
-  // Generic Game Event Relay
   socket.on('game-event', ({ roomCode, eventName, data }) => {
     const roomKey = roomCode || currentRoom;
     if (!roomKey) return;
-    // Broadcasts to all OTHER players in room
     socket.to(roomKey).emit('game-event', { eventName, data });
   });
 
-  // Backward compatibility specific events
   socket.on('player-jump', ({ roomCode, slot }) => {
     const roomKey = roomCode || currentRoom;
     if (!roomKey) return;
     socket.to(roomKey).emit('remote-jump', { slot: slot !== undefined ? slot : playerSlot });
-  });
-
-  socket.on('spawn-obstacle', ({ roomCode, obstacleData }) => {
-    const roomKey = roomCode || currentRoom;
-    if (!roomKey) return;
-    socket.to(roomKey).emit('obstacle-spawned', obstacleData);
   });
 
   socket.on('player-hit', ({ roomCode, slot, remainingLives }) => {
@@ -275,11 +259,10 @@ io.on('connection', (socket) => {
       if (alivePlayers.length === 0) {
         room.gameRunning = false;
         const duration = Date.now() - (room.gameStartTime || Date.now());
-        console.log(`[JumpingFriends] [Room ${roomKey}] Game Over. Duration: ${duration}ms`);
         
         io.to(roomKey).emit('game-over-all', { players: room.players });
         io.to(roomKey).emit('game-results', {
-          gameId: room.selectedGame,
+          gameId: room.selectedGame || DEFAULT_GAME,
           players: room.players,
           duration: duration
         });
@@ -300,14 +283,13 @@ io.on('connection', (socket) => {
       p.score = 0;
     });
 
-    console.log(`[JumpingFriends] [Room ${roomKey}] Game Restarted`);
     io.to(roomKey).emit('game-started', {
       seed: room.seed,
-      players: room.players
+      players: room.players,
+      selectedGame: room.selectedGame
     });
   });
 
-  // WebRTC Signaling Relay
   socket.on('webrtc-offer', (data = {}) => {
     const { targetId, offer, fromSlot } = data || {};
     if (targetId && offer) {
@@ -336,12 +318,10 @@ io.on('connection', (socket) => {
       room.players = room.players.filter(p => p.id !== socket.id);
 
       if (room.players.length === 0) {
-        console.log(`[JumpingFriends] Room ${currentRoom} deleted (empty)`);
         delete rooms[currentRoom];
       } else {
         if (room.hostId === socket.id) {
           room.hostId = room.players[0].id;
-          console.log(`[JumpingFriends] [Room ${currentRoom}] Host migrated to ${room.hostId}`);
         }
         io.to(currentRoom).emit('room-update', {
           players: room.players,

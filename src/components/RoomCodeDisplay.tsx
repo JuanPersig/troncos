@@ -5,15 +5,22 @@ interface RoomCodeDisplayProps {
 }
 
 export const RoomCodeDisplay: React.FC<RoomCodeDisplayProps> = ({ code }) => {
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code);
+    alert(`Código de sala copiado: ${code}`);
+  };
+
   return (
-    <div className="room-code flex items-center justify-between p-2 pixel-border-wood bg-bark mb-4">
-      <span className="text-sm text-golden">CÓDIGO: {code}</span>
-      <button 
-        className="pixel-btn pixel-btn-sm pixel-btn-wood"
-        onClick={() => navigator.clipboard.writeText(code)}
+    <div className="flex flex-col gap-1 w-full">
+      <label className="pixel-label text-center">CÓDIGO DE SALA</label>
+      <div 
+        className="room-code cursor-pointer hover:border-yellow-bright transition-colors flex items-center justify-between"
+        onClick={handleCopy}
+        title="Haz clic para copiar"
       >
-        COPIAR
-      </button>
+        <span className="text-yellow">{code || '---'}</span>
+        <span className="text-xs text-celeste">📋</span>
+      </div>
     </div>
   );
 };

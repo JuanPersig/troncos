@@ -3,62 +3,46 @@ import { PlayerInfo } from '@/core/types';
 
 class SocketService {
   private socket: Socket | null = null;
-  private customUrl: string | null = null;
 
   getServerUrl(): string {
-    if (this.customUrl) return this.customUrl;
-    
-    // Check localStorage
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('jumping_friends_server_url');
-      if (stored) return stored;
-      
-      // If we are on Netlify or similar static host, default to the Render backend (or let user set it)
-      if (window.location.hostname.includes('netlify.app') || window.location.hostname.includes('vercel.app')) {
-        // We can check if a default render URL is preferred, but let's fall back to location origin unless set.
-        return window.location.origin;
-      }
-      
-      if (window.location.hostname !== 'localhost') {
-        return window.location.origin;
-      }
-    }
-    return 'http://localhost:3001';
-  }
+      const hostname = window.location.hostname;
+      const port = window.location.port;
 
-  setServerUrl(url: string) {
-    const trimmed = url.trim();
-    if (trimmed) {
-      localStorage.setItem('jumping_friends_server_url', trimmed);
-      this.customUrl = trimmed;
-    } else {
-      localStorage.removeItem('jumping_friends_server_url');
-      this.customUrl = null;
+      // Local development on Vite port 3000 -> connect to local Node server on 3001
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        if (port === '3000') {
+          return `http://${hostname}:3001`;
+        }
+      }
+
+      // Production / Hosted deployment (Render, Railway, Vercel, Netlify, custom domain)
+      // The Socket.IO server is served directly from the host origin
+      return window.location.origin;
     }
-    this.disconnect();
-    this.connect();
+    return '';
   }
 
   connect() {
     if (this.socket && this.socket.connected) return this.socket;
 
     const url = this.getServerUrl();
-    console.log('[Socket] Connecting to:', url);
+    console.log('[JumpingFriends] Connecting socket to:', url);
 
     this.socket = io(url, {
-      transports: ['websocket', 'polling'],  // WebSocket first = ultra-low latency (<30ms)
+      transports: ['websocket', 'polling'],
       path: '/socket.io/',
-      reconnectionAttempts: 10,
+      reconnectionAttempts: 15,
       reconnectionDelay: 1000,
       timeout: 20000,
     });
 
     this.socket.on('connect', () => {
-      console.log('[Socket] Connected to server, ID:', this.socket?.id);
+      console.log('[JumpingFriends] Socket connected, ID:', this.socket?.id);
     });
 
     this.socket.on('connect_error', (err) => {
-      console.warn('[Socket] Connection error:', err.message);
+      console.warn('[JumpingFriends] Socket connection error:', err.message);
     });
 
     return this.socket;
@@ -97,6 +81,14 @@ class SocketService {
 
   restartGame(roomCode: string) {
     this.getSocket().emit('restart-game', { roomCode });
+  }
+
+  sendJump(roomCode: string, slot: number) {
+    this.getSocket().emit('player-jump', { roomCode, slot });
+  }
+
+  sendHit(roomCode: string, slot: number, remainingLives: number) {
+    this.getSocket().emit('player-hit', { roomCode, slot, remainingLives });
   }
 
   sendGameEvent(roomCode: string, eventName: string, data: any) {

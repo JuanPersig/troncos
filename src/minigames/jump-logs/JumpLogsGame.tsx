@@ -297,7 +297,7 @@ const JumpLogsGame: React.FC<MiniGameProps> = ({ roomCode, localSlot, players, i
             }
         };
 
-        const handleGameStarted = ({ seed, players: startPlayers }: { seed: number; players: any[] }) => {
+        const handleGameStarted = ({ seed }: { seed: number }) => {
             resetGame(seed);
         };
 
@@ -333,7 +333,7 @@ const JumpLogsGame: React.FC<MiniGameProps> = ({ roomCode, localSlot, players, i
                 name: p.name,
                 score: Math.floor(engine.score / 10),
                 livesRemaining: p.lives,
-                isWinner: p.lives > 0 || Math.max(...engine.players.map(pl => pl.lives)) === 0 // Basic win logic
+                isWinner: p.lives > 0 || Math.max(...engine.players.map(pl => pl.lives)) === 0
             })).sort((a, b) => b.livesRemaining - a.livesRemaining || b.score - a.score)
         };
         
@@ -341,45 +341,49 @@ const JumpLogsGame: React.FC<MiniGameProps> = ({ roomCode, localSlot, players, i
     };
 
     return (
-        <div className="w-full flex flex-col items-center gap-3">
-            <div className="w-full max-w-4xl mx-auto relative rounded-xl overflow-hidden cursor-pointer shadow-2xl" onClick={triggerLocalJump} style={{ aspectRatio: '4/3' }}>
+        <div className="w-full flex flex-col items-center gap-2 max-w-3xl mx-auto">
+            <div 
+                className="w-full relative rounded-lg overflow-hidden cursor-pointer shadow-xl border-2 border-sky-dark bg-bg-darkest" 
+                onClick={triggerLocalJump} 
+                style={{ aspectRatio: '4/3' }}
+            >
                 <canvas
                     ref={canvasRef}
                     width={JUMP_LOGS_CONFIG.CANVAS_WIDTH}
                     height={JUMP_LOGS_CONFIG.CANVAS_HEIGHT}
-                    className="w-full h-full object-contain bg-[#1e3a24] pixel-border-wood shadow-2xl block"
+                    className="w-full h-full object-contain block"
                 />
 
                 <button
                     onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }}
-                    className="absolute top-4 left-4 z-20 p-2 bg-[#2b180a] text-[#f4d160] border-2 border-[#5c3111] transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                    className="absolute top-3 left-3 z-20 p-1.5 bg-bg-dark text-yellow border border-sky-dark text-xs cursor-pointer"
                     aria-label={isMuted ? "Unmute" : "Mute"}
                 >
                     {isMuted ? "🔇" : "🔊"}
                 </button>
 
                 {(!gameRunning && canRestart) && (
-                    <div className="absolute inset-0 bg-black/85 flex flex-col items-center justify-center z-10 p-6 text-center">
-                        <h2 className="text-2xl md:text-4xl text-red-500 font-pixel mb-4 animate-pulse" style={{ textShadow: '2px 2px 0 #000' }}>
+                    <div className="absolute inset-0 bg-black/85 flex flex-col items-center justify-center z-10 p-4 text-center">
+                        <h2 className="text-xl sm:text-3xl text-error font-pixel mb-2" style={{ textShadow: '2px 2px 0 #000' }}>
                             ¡FIN DEL JUEGO!
                         </h2>
-                        <p className="text-yellow-300 font-pixel text-xs mb-6">
-                            PUNTAJE: <span className="text-[#38ef7d]">{score}</span>
+                        <p className="text-yellow font-pixel text-xs mb-4">
+                            PUNTAJE: <span className="text-celeste">{score}</span>
                         </p>
                         
                         <button
                             onClick={(e) => { e.stopPropagation(); handleExitGame(); }}
-                            className="px-6 py-3 pixel-btn-green font-pixel text-xs cursor-pointer"
+                            className="pixel-btn pixel-btn-orange text-xs cursor-pointer"
                         >
-                            VOLVER AL LOBBY
+                            VER RESULTADOS
                         </button>
                     </div>
                 )}
             </div>
 
-            <div className="w-full max-w-4xl bg-[#1e3a24] pixel-border-green p-3 text-[10px] text-[#e0f8cf] font-pixel flex flex-col sm:flex-row items-center justify-between gap-2 text-center">
-                <span>🌲 ¡Salta frente a la cámara o presiona la BARRA ESPACIADORA para saltar los troncos!</span>
-                <span className="text-[#f4d160]">SALTO: CÁMARA O TECLADO (ESPACIO)</span>
+            <div className="w-full bg-bg-panel border border-sky-dark p-2 text-xs text-white flex flex-col sm:flex-row items-center justify-between gap-2 text-center">
+                <span className="text-celeste">🏃 ¡Salta frente a la cámara o presiona la BARRA ESPACIADORA!</span>
+                <span className="text-yellow">SALTO: CÁMARA O TECLADO (ESPACIO)</span>
             </div>
         </div>
     );
