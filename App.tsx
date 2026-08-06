@@ -206,7 +206,7 @@ const App: React.FC = () => {
       </header>
 
       {/* 2-COLUMN MAIN LAYOUT: VERTICAL WEBCAMS SIDEBAR ON LEFT, ARENA/LOBBY IN CENTER */}
-      <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6 items-start justify-center">
+      <div className="w-full max-w-[1400px] flex-1 flex flex-col lg:flex-row gap-6 items-stretch justify-center">
         
         {/* LEFT COLUMN: VERTICAL STACK OF 3 WEBCAM CARDS */}
         <aside className="w-full lg:w-[280px] shrink-0 flex flex-col gap-3">
@@ -293,11 +293,11 @@ const App: React.FC = () => {
           })}
         </aside>
 
-        {/* CENTER / RIGHT COLUMN: PANTALLA DE JUEGO + AVISO DIRECTLY BELOW */}
+        {/* CENTER / RIGHT COLUMN: PANTALLA DE JUEGO */}
         <div className="flex-1 w-full flex flex-col gap-3 items-center justify-between">
           
           {/* PANTALLA DE JUEGO (LOBBY OR DINOGAME ARENA) */}
-          <main className="w-full flex-1 flex flex-col items-center justify-center">
+          <main className="w-full flex-1 flex flex-col">
             {inLobby ? (
               <div className="w-full pixel-border-wood bg-[#1e3a24] p-6 md:p-8">
                 <div className="text-center mb-6">
@@ -481,12 +481,6 @@ const App: React.FC = () => {
               />
             )}
           </main>
-
-          {/* AVISO BAR DIRECTLY UNDER PANTALLA DE JUEGO (MATCHING WIREFRAME) */}
-          <div className="w-full bg-[#1e3a24] pixel-border-green p-3 text-[9px] md:text-[10px] text-[#e0f8cf] font-pixel flex flex-col sm:flex-row items-center justify-between gap-2 text-center shrink-0">
-            <span>🌲 ¡Salta frente a la cámara o presiona la BARRA ESPACIADORA para saltar los troncos!</span>
-            <span className="text-[#f4d160]">SALTO: CÁMARA O TECLADO (ESPACIO)</span>
-          </div>
 
         </div>
       </div>

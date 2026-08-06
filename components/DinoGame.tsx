@@ -516,7 +516,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
 
     // --- REACT STATE ---
     const [isLoading, setIsLoading] = useState(true);
-    const [status, setStatus] = useState("¡Salga frente a la cámara o presiona la BARRA ESPACIADORA para saltar los troncos!");
+    const [status, setStatus] = useState("¡Salta frente a la cámara o presiona la BARRA ESPACIADORA para saltar los troncos!");
     const [showVision, setShowVision] = useState(false);
     const [gameRunning, setGameRunning] = useState(true); // Default running so characters and troncos show immediately!
     const [canRestart, setCanRestart] = useState(false);
@@ -1052,15 +1052,15 @@ function mulberry32(a: number) {
     }, [localStream]);
 
     return (
-        <div className="flex flex-col items-center gap-4 w-full max-w-5xl relative">
+        <div className="flex flex-col items-center gap-3 w-full h-full flex-1 relative">
             
             {/* GAME CANVAS ARENA (PIXEL ART WOOD BORDER) */}
-            <div className="relative rounded-lg overflow-hidden pixel-border-wood bg-[#1e3a24] cursor-pointer" onClick={triggerLocalJump}>
+            <div className="relative rounded-lg overflow-hidden pixel-border-wood bg-[#1e3a24] cursor-pointer w-full flex-1 min-h-[460px] flex items-center justify-center" onClick={triggerLocalJump}>
                 <canvas
                     ref={canvasRef}
                     width={GAME_CONFIG.CANVAS_WIDTH}
                     height={GAME_CONFIG.CANVAS_HEIGHT}
-                    className="block w-full max-w-full"
+                    className="block w-full h-full object-contain max-h-[75vh]"
                 />
 
                 {/* MUTE BUTTON */}
