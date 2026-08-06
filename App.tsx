@@ -371,94 +371,95 @@ const App: React.FC = () => {
             playerList={players}
             isHost={isHost}
             isCountdownActive={countdown !== null}
+            localStream={localStream}
           />
-
-          {/* 3 PLAYER WEBCAM & HUD CARDS GRID */}
-          <section className="w-full grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[0, 1, 2].map((slotIdx) => {
-              const p = players.find(player => player.slot === slotIdx);
-              const style = slotStyles[slotIdx];
-              const isLocal = slotIdx === playerSlot;
-              const remoteStream = remoteStreams[slotIdx];
-
-              return (
-                <div
-                  key={slotIdx}
-                  className={`pixel-card p-4 flex flex-col gap-3 border-2 ${style.border}`}
-                >
-                  {/* PLAYER HEADER & BADGE */}
-                  <div className="flex items-center justify-between border-b-2 border-[#2b180a] pb-2">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-3 h-3 ${style.bg}`} />
-                      <span className={`text-xs ${style.text}`}>
-                        {p ? p.name : `P${slotIdx + 1}`}
-                      </span>
-                    </div>
-
-                    {/* PIXEL LIVES (❤️ ❤️ ❤️) */}
-                    <div className="flex items-center gap-1 text-xs">
-                      {[1, 2, 3].map((heart) => (
-                        <span key={heart} className={p && p.lives >= heart ? 'opacity-100' : 'opacity-20 grayscale'}>
-                          ❤️
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* WEBCAM VIDEO DISPLAY CONTAINER */}
-                  <div className="relative w-full aspect-video bg-black border-2 border-[#2b180a] flex items-center justify-center overflow-hidden">
-                    {isLocal ? (
-                      /* LOCAL WEBCAM FEED */
-                      <video
-                        ref={localVideoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full h-full object-cover scale-x-[-1]"
-                      />
-                    ) : remoteStream ? (
-                      /* REMOTE PLAYER WEBCAM STREAM (WebRTC) */
-                      <video
-                        ref={(el) => {
-                          if (el && remoteStream && el.srcObject !== remoteStream) {
-                            el.srcObject = remoteStream;
-                          }
-                        }}
-                        autoPlay
-                        playsInline
-                        className="w-full h-full object-cover scale-x-[-1]"
-                      />
-                    ) : (
-                      /* AVATAR / BOT PREVIEW */
-                      <div className="flex flex-col items-center gap-2 text-center p-3">
-                        <div className="text-2xl">
-                          {p?.isBot ? '🤖' : '📹'}
-                        </div>
-                        <span className="text-[8px] text-gray-400">
-                          {p?.isBot ? 'BOT SIMULADO' : p ? 'CÁMARA REMOTA' : 'VACÍO'}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* OVERLAY BADGE */}
-                    <div className="absolute top-2 left-2 bg-[#142416] px-2 py-0.5 text-[8px] text-[#f4d160] border border-[#2b180a]">
-                      {isLocal ? 'TU CÁMARA' : p ? p.name : 'DESCONECTADO'}
-                    </div>
-                  </div>
-
-                  {/* PLAYER STATUS FOOTER */}
-                  <div className="flex items-center justify-between text-[8px] pt-1 text-gray-300">
-                    <span>ESTADO:</span>
-                    <span className={p && p.lives > 0 ? 'text-green-400' : 'text-red-500'}>
-                      {p ? (p.lives > 0 ? 'EN JUEGO' : 'ELIMINADO') : 'VACÍO'}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </section>
         </main>
       )}
+
+      {/* 3 PLAYER WEBCAM & HUD CARDS GRID (ALWAYS VISIBLE AT ALL TIMES) */}
+      <section className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        {[0, 1, 2].map((slotIdx) => {
+          const p = players.find(player => player.slot === slotIdx);
+          const style = slotStyles[slotIdx];
+          const isLocal = playerSlot !== null ? slotIdx === playerSlot : slotIdx === 0;
+          const remoteStream = remoteStreams[slotIdx];
+
+          return (
+            <div
+              key={slotIdx}
+              className={`pixel-card p-4 flex flex-col gap-3 border-2 ${style.border}`}
+            >
+              {/* PLAYER HEADER & BADGE */}
+              <div className="flex items-center justify-between border-b-2 border-[#2b180a] pb-2">
+                <div className="flex items-center gap-2">
+                  <span className={`w-3 h-3 ${style.bg}`} />
+                  <span className={`text-xs ${style.text}`}>
+                    {p ? p.name : `P${slotIdx + 1}`}
+                  </span>
+                </div>
+
+                {/* PIXEL LIVES (❤️ ❤️ ❤️) */}
+                <div className="flex items-center gap-1 text-xs">
+                  {[1, 2, 3].map((heart) => (
+                    <span key={heart} className={p && p.lives >= heart ? 'opacity-100' : 'opacity-20 grayscale'}>
+                      ❤️
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* WEBCAM VIDEO DISPLAY CONTAINER */}
+              <div className="relative w-full aspect-video bg-black border-2 border-[#2b180a] flex items-center justify-center overflow-hidden">
+                {isLocal ? (
+                  /* LOCAL WEBCAM FEED */
+                  <video
+                    ref={localVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover scale-x-[-1]"
+                  />
+                ) : remoteStream ? (
+                  /* REMOTE PLAYER WEBCAM STREAM (WebRTC) */
+                  <video
+                    ref={(el) => {
+                      if (el && remoteStream && el.srcObject !== remoteStream) {
+                        el.srcObject = remoteStream;
+                      }
+                    }}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-cover scale-x-[-1]"
+                  />
+                ) : (
+                  /* AVATAR / BOT PREVIEW */
+                  <div className="flex flex-col items-center gap-2 text-center p-3">
+                    <div className="text-2xl">
+                      {p?.isBot ? '🤖' : '📹'}
+                    </div>
+                    <span className="text-[8px] text-gray-400">
+                      {p?.isBot ? 'BOT SIMULADO' : p ? 'ESPERANDO CÁMARA...' : 'ESPERANDO JUGADOR...'}
+                    </span>
+                  </div>
+                )}
+
+                {/* OVERLAY BADGE */}
+                <div className="absolute top-2 left-2 bg-[#142416] px-2 py-0.5 text-[8px] text-[#f4d160] border border-[#2b180a]">
+                  {isLocal ? 'TU CÁMARA' : p ? p.name : 'DESCONECTADO'}
+                </div>
+              </div>
+
+              {/* PLAYER STATUS FOOTER */}
+              <div className="flex items-center justify-between text-[8px] pt-1 text-gray-300">
+                <span>ESTADO:</span>
+                <span className={p && p.lives > 0 ? 'text-green-400' : 'text-red-500'}>
+                  {p ? (p.lives > 0 ? 'EN JUEGO' : 'ELIMINADO') : 'VACÍO'}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </section>
 
       {/* COUNTDOWN OVERLAY */}
       {countdown !== null && (

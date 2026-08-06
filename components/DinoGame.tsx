@@ -967,16 +967,22 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
         if (!visionRef.current.poseLandmarker) return;
 
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 320, height: 240 }
-            });
+            let stream = localStream;
+            if (!stream) {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 320, height: 240 }
+                });
+            }
 
-            if (videoRef.current) {
+            if (videoRef.current && stream) {
                 videoRef.current.srcObject = stream;
-                videoRef.current.addEventListener("loadeddata", () => {
+                videoRef.current.onloadeddata = () => {
                     predictWebcam();
                     engineRef.current.cameraReady = true;
-                });
+                };
+                // Fallback trigger if event already fired
+                predictWebcam();
+                engineRef.current.cameraReady = true;
             }
         } catch (err) {
             console.error(err);
@@ -1016,7 +1022,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
         return () => {
             cancelAnimationFrame(engineRef.current.visionAnimationId);
         };
-    }, []);
+    }, [localStream]);
 
     return (
         <div className="flex flex-col items-center gap-4 w-full max-w-5xl relative">
@@ -1064,24 +1070,10 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
                 <span className="text-[#f4d160]">SALTO: CÁMARA O TECLADO (ESPACIO)</span>
             </div>
 
-            {/* DEBUG VISION FEED */}
-            <div className="flex gap-4 items-center">
-                <label className="cursor-pointer text-[10px] text-gray-300 flex items-center gap-2 hover:text-white transition-colors">
-                    <input
-                        type="checkbox"
-                        checked={showVision}
-                        onChange={(e) => setShowVision(e.target.checked)}
-                        className="accent-[#438a22]"
-                    />
-                    Mostrar Visión MediaPipe (Debug)
-                </label>
-            </div>
-
-            <div className={`relative w-[320px] h-[240px] border-4 border-[#2b180a] bg-black ${showVision ? 'block' : 'hidden'}`}>
-                <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover scale-x-[-1]"></video>
-                <canvas ref={outputCanvasRef} className="absolute top-0 left-0 w-full h-full scale-x-[-1]"></canvas>
-                <div ref={jumpSignalRef} className="absolute top-3 right-3 w-5 h-5 bg-gray-500 rounded-full transition-all duration-100 [&.active]:bg-red-500"></div>
-            </div>
+            {/* HIDDEN MEDIAPIPE VIDEO HARNESS */}
+            <video ref={videoRef} autoPlay playsInline className="hidden"></video>
+            <canvas ref={outputCanvasRef} className="hidden"></canvas>
+            <div ref={jumpSignalRef} className="hidden"></div>
         </div>
     );
 };
