@@ -176,37 +176,39 @@ const App: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#142416] text-[#e0f8cf] flex flex-col items-center p-3 md:p-6 font-press-start selection:bg-[#438a22] selection:text-white">
+    <div className="min-h-screen bg-[#142416] text-[#e0f8cf] flex flex-col items-center pb-6 font-press-start selection:bg-[#438a22] selection:text-white">
       
-      {/* TOP PIXEL NAVBAR / HEADER */}
-      <header className="w-full max-w-5xl flex items-center justify-between pixel-border-wood bg-[#1e3a24] p-4 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#7c4f2b] border-2 border-[#2b180a] flex items-center justify-center text-xl">
-            🪵
-          </div>
-          <div>
-            <h1 className="text-sm md:text-lg font-pixel text-[#f4d160] pixel-text-shadow">
-              TRONCOS 3P
-            </h1>
-            <p className="text-[9px] text-[#73c242] mt-1">JUEGO MULTIJUGADOR PIXEL ART</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 bg-[#142416] border-2 border-[#2b180a] px-3 py-2 text-[10px]">
-            <span className="text-gray-400">SALA:</span>
-            <span className="text-[#f4d160]">{roomCode}</span>
+      {/* FULL-WIDTH TOP NAVBAR / HEADER */}
+      <header className="w-full bg-[#1e3a24] border-b-4 border-[#2b180a] shadow-xl px-4 lg:px-8 py-3 mb-6 sticky top-0 z-40">
+        <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#7c4f2b] border-2 border-[#2b180a] flex items-center justify-center text-xl shadow-md">
+              🪵
+            </div>
+            <div>
+              <h1 className="text-sm md:text-lg font-pixel text-[#f4d160] pixel-text-shadow">
+                TRONCOS 3P
+              </h1>
+              <p className="text-[9px] text-[#73c242] mt-0.5">JUEGO MULTIJUGADOR PIXEL ART</p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 text-[10px] bg-[#142416] border-2 border-[#2b180a] px-3 py-2">
-            <span className={`w-2.5 h-2.5 ${isConnected ? 'bg-green-400' : 'bg-red-500'}`} />
-            <span className="text-gray-200">{isConnected ? 'ONLINE' : 'OFFLINE'}</span>
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-2 bg-[#142416] border-2 border-[#2b180a] px-3 py-2 text-[10px]">
+              <span className="text-gray-400">SALA:</span>
+              <span className="text-[#f4d160]">{roomCode}</span>
+            </div>
+
+            <div className="flex items-center gap-2 text-[10px] bg-[#142416] border-2 border-[#2b180a] px-3 py-2">
+              <span className={`w-2.5 h-2.5 ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-500'}`} />
+              <span className="text-gray-200">{isConnected ? 'ONLINE' : 'OFFLINE'}</span>
+            </div>
           </div>
         </div>
       </header>
 
       {/* 2-COLUMN MAIN LAYOUT: VERTICAL WEBCAMS SIDEBAR ON LEFT, ARENA/LOBBY IN CENTER */}
-      <div className="w-full max-w-[1400px] flex-1 flex flex-col lg:flex-row gap-6 items-stretch justify-center">
+      <div className="w-full max-w-[1400px] px-4 flex-1 flex flex-col lg:flex-row gap-6 items-stretch justify-center">
         
         {/* LEFT COLUMN: VERTICAL STACK OF 3 WEBCAM CARDS */}
         <aside className="w-full lg:w-[280px] shrink-0 flex flex-col gap-3">
