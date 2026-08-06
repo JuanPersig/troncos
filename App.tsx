@@ -62,12 +62,21 @@ const App: React.FC = () => {
       setInLobby(false);
     };
 
+    const onPlayerHitUpdate = ({ slot, remainingLives, players }: any) => {
+      if (players) {
+        setPlayers(players);
+      } else {
+        setPlayers(prev => prev.map(p => p.slot === slot ? { ...p, lives: remainingLives } : p));
+      }
+    };
+
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('error-message', onErrorMsg);
     socket.on('room-joined', onRoomJoined);
     socket.on('room-update', onRoomUpdate);
     socket.on('game-started', onGameStarted);
+    socket.on('player-hit-update', onPlayerHitUpdate);
 
     const unsubscribeRemoteStream = webRTCManager.onRemoteStream((slot, stream) => {
       setRemoteStreams(prev => ({ ...prev, [slot]: stream }));
@@ -80,6 +89,7 @@ const App: React.FC = () => {
       socket.off('room-joined', onRoomJoined);
       socket.off('room-update', onRoomUpdate);
       socket.off('game-started', onGameStarted);
+      socket.off('player-hit-update', onPlayerHitUpdate);
       unsubscribeRemoteStream();
     };
   }, []);

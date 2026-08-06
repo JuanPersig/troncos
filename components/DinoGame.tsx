@@ -653,6 +653,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
     };
 
     const handlePlayerCollision = (player: RunnerEntity, tronco: Tronco) => {
+        // Only evaluate collision for local player, or bots if we are host
+        if (player.slot !== localSlot && (!player.isBot || !isHost)) return;
         if (player.lives <= 0 || player.invulnerableTimer > 0) return;
 
         const paddingX = 6;
