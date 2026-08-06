@@ -68,16 +68,16 @@ interface GameEngineState {
 // --- CONSTANTS ---
 
 const GAME_CONFIG = {
-    CANVAS_WIDTH: 1200,
-    CANVAS_HEIGHT: 480,
-    GROUND_Y: 375,
+    CANVAS_WIDTH: 800,
+    CANVAS_HEIGHT: 600,
+    GROUND_Y: 480,
     GRAVITY: 3600,
     JUMP_FORCE: 960,
-    INITIAL_SPEED: 480,
-    MAX_SPEED: 1350,
+    INITIAL_SPEED: 420,
+    MAX_SPEED: 1250,
     SPEED_INCREMENT: 8,
-    PLAYER_GROUND_Y: 325,
-    PLAYER_SPACING_X: [110, 190, 270], // X positions for P1, P2, P3
+    PLAYER_GROUND_Y: 420,
+    PLAYER_SPACING_X: [70, 135, 200], // X positions for P1, P2, P3
     PLAYER_COLORS: [
         { primary: '#38ef7d', secondary: '#11998e', shirt: '#00c2cb', tag: 'P1' },
         { primary: '#ff4081', secondary: '#c2185b', shirt: '#ff80ab', tag: 'P2' },
@@ -249,17 +249,17 @@ class Tronco {
         this.type = type;
 
         if (type === 'large') {
-            this.width = 64;
-            this.height = 56;
-            this.y = GAME_CONFIG.GROUND_Y - 56;
+            this.width = 56;
+            this.height = 52;
+            this.y = GAME_CONFIG.GROUND_Y - 52;
         } else if (type === 'double') {
-            this.width = 96;
-            this.height = 44;
-            this.y = GAME_CONFIG.GROUND_Y - 44;
+            this.width = 86;
+            this.height = 42;
+            this.y = GAME_CONFIG.GROUND_Y - 42;
         } else {
-            this.width = 54;
-            this.height = 44;
-            this.y = GAME_CONFIG.GROUND_Y - 44;
+            this.width = 48;
+            this.height = 42;
+            this.y = GAME_CONFIG.GROUND_Y - 42;
         }
         this.active = true;
     }
@@ -1052,15 +1052,15 @@ function mulberry32(a: number) {
     }, [localStream]);
 
     return (
-        <div className="flex flex-col items-center gap-3 w-full h-full flex-1 relative">
+        <div className="w-full flex flex-col items-center gap-3 relative">
             
-            {/* GAME CANVAS ARENA (PIXEL ART WOOD BORDER) */}
-            <div className="relative rounded-lg overflow-hidden pixel-border-wood bg-[#1e3a24] cursor-pointer w-full flex-1 min-h-[460px] flex items-center justify-center" onClick={triggerLocalJump}>
+            {/* GAME CANVAS ARENA (PIXEL ART WOOD BORDER WITH ASPECT 4:3 RATIO) */}
+            <div className="w-full max-w-4xl mx-auto aspect-[4/3] relative rounded-xl overflow-hidden pixel-border-wood bg-[#1e3a24] cursor-pointer shadow-2xl" onClick={triggerLocalJump}>
                 <canvas
                     ref={canvasRef}
                     width={GAME_CONFIG.CANVAS_WIDTH}
                     height={GAME_CONFIG.CANVAS_HEIGHT}
-                    className="block w-full h-full object-contain max-h-[75vh]"
+                    className="w-full h-full block bg-[#1e3a24] object-contain"
                 />
 
                 {/* MUTE BUTTON */}
