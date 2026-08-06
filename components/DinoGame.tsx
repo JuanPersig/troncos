@@ -355,6 +355,43 @@ class Tronco {
     }
 }
 
+// --- SEEDED PSEUDO-RANDOM NUMBER GENERATOR (Mulberry32) ---
+function mulberry32(a: number) {
+    return function() {
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+// --- COLOR LERP HELPER FOR SMOOTH DAY/NIGHT TRANSITIONS ---
+function lerpColor(c1: string, c2: string, factor: number): string {
+    const f = Math.max(0, Math.min(1, factor));
+    const r1 = parseInt(c1.slice(1, 3), 16), g1 = parseInt(c1.slice(3, 5), 16), b1 = parseInt(c1.slice(5, 7), 16);
+    const r2 = parseInt(c2.slice(1, 3), 16), g2 = parseInt(c2.slice(3, 5), 16), b2 = parseInt(c2.slice(5, 7), 16);
+    const r = Math.round(r1 + f * (r2 - r1));
+    const g = Math.round(g1 + f * (g2 - g1));
+    const b = Math.round(b1 + f * (b2 - b1));
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+// --- NIGHT CELESTIAL PARTICLES ---
+const STARS = Array.from({ length: 50 }, () => ({
+    x: Math.random() * 800,
+    y: Math.random() * 320,
+    size: Math.random() > 0.7 ? 3 : 2,
+    phase: Math.random() * Math.PI * 2
+}));
+
+const FIREFLIES = Array.from({ length: 14 }, () => ({
+    x: Math.random() * 800,
+    y: 180 + Math.random() * 280,
+    speedX: (Math.random() - 0.5) * 22,
+    speedY: (Math.random() - 0.5) * 16,
+    phase: Math.random() * Math.PI * 2
+}));
+
 // Pool Helper
 const getFromPool = <T extends { active: boolean }>(pool: T[], factory: () => T): T => {
     const item = pool.find(p => !p.active);
@@ -379,7 +416,7 @@ const createRunner = (slot: number, name: string): RunnerEntity => {
         x: startX,
         y: GAME_CONFIG.PLAYER_GROUND_Y,
         width: 38,
-        height: 45,
+        height: 48,
         dy: 0,
         grounded: false,
         jumpTimer: 0,
@@ -439,59 +476,100 @@ const createRunner = (slot: number, name: string): RunnerEntity => {
         draw(ctx: CanvasRenderingContext2D) {
             if (this.lives <= 0) return; // Dead player is not drawn
 
-            // Invulnerability Flashing (damage hit effect)
-            if (this.invulnerableTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
-                ctx.fillStyle = '#ff0000'; // Damage red flash
-            } else {
-                ctx.fillStyle = this.shirtColor;
-            }
-
             const ix = Math.floor(this.x);
             const iy = Math.floor(this.y);
 
             ctx.save();
 
-            // Pixel Shadow on Ground
-            ctx.fillStyle = 'rgba(20, 35, 15, 0.4)';
-            ctx.fillRect(ix + 4, GAME_CONFIG.GROUND_Y + 2, 28, 5);
+            // 1. Translucent Ellipse Ground Shadow
+            ctx.fillStyle = 'rgba(10, 20, 8, 0.35)';
+            ctx.beginPath();
+            ctx.ellipse(ix + 18, GAME_CONFIG.GROUND_Y + 4, 18, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
 
-            // Pixel Art Shirt Body
-            ctx.fillRect(ix + 8, iy + 10, 20, 20);
+            // 2. Invulnerability Damage Flashing (Red / White flash effect)
+            const isHit = this.invulnerableTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0;
+            const mainColor = isHit ? '#ff3333' : this.shirtColor;
+            const accentColor = isHit ? '#ffffff' : this.color;
+            const secondaryColor = isHit ? '#aa0000' : this.secondaryColor;
 
-            // Skin Face
+            // 3. Back Arm (swinging in opposition)
+            ctx.fillStyle = secondaryColor;
+            if (this.legState) {
+                ctx.fillRect(ix + 2, iy + 14, 6, 12);
+            } else {
+                ctx.fillRect(ix + 28, iy + 14, 6, 12);
+            }
+
+            // 4. Pixel Legs & Running Sneakers
+            ctx.fillStyle = secondaryColor;
+            if (!this.grounded) {
+                // Jump pose (knees tucked up)
+                ctx.fillRect(ix + 8, iy + 34, 8, 10);
+                ctx.fillRect(ix + 20, iy + 32, 8, 8);
+                // Sneaker soles
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(ix + 6, iy + 42, 10, 3);
+                ctx.fillRect(ix + 20, iy + 38, 10, 3);
+            } else if (this.legState) {
+                // Leg A forward, Leg B back
+                ctx.fillRect(ix + 6, iy + 34, 8, 14);
+                ctx.fillRect(ix + 22, iy + 34, 8, 10);
+                // Sneaker soles
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(ix + 4, iy + 46, 10, 3);
+                ctx.fillRect(ix + 22, iy + 42, 10, 3);
+            } else {
+                // Leg B forward, Leg A back
+                ctx.fillRect(ix + 6, iy + 34, 8, 10);
+                ctx.fillRect(ix + 22, iy + 34, 8, 14);
+                // Sneaker soles
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(ix + 6, iy + 42, 10, 3);
+                ctx.fillRect(ix + 20, iy + 46, 10, 3);
+            }
+
+            // 5. Torso / Running Shirt with Accent Stripe
+            ctx.fillStyle = mainColor;
+            ctx.fillRect(ix + 8, iy + 12, 20, 20);
+            ctx.fillStyle = accentColor;
+            ctx.fillRect(ix + 12, iy + 12, 4, 20);
+
+            // 6. Head & Skin
             ctx.fillStyle = '#ffdbac';
             ctx.fillRect(ix + 10, iy + 2, 16, 12);
 
-            // Pixel Headband matching player accent color
-            ctx.fillStyle = this.color;
-            ctx.fillRect(ix + 8, iy, 20, 5);
+            // 7. Headband / Hair Cap matching Accent Color
+            ctx.fillStyle = accentColor;
+            ctx.fillRect(ix + 8, iy - 2, 20, 6);
 
-            // Eye facing right
-            ctx.fillStyle = '#1e3a24';
-            ctx.fillRect(ix + 20, iy + 6, 4, 4);
+            // 8. Hair Tuft
+            ctx.fillStyle = secondaryColor;
+            ctx.fillRect(ix + 4, iy, 5, 8);
 
-            // Pixel Shorts
-            ctx.fillStyle = '#2b180a';
-            ctx.fillRect(ix + 10, iy + 28, 16, 6);
+            // 9. Eye with Reflection & Blushing Cheek
+            ctx.fillStyle = '#142416';
+            ctx.fillRect(ix + 20, iy + 5, 4, 4); // Eye
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(ix + 22, iy + 5, 2, 2); // Eye catchlight
+            ctx.fillStyle = '#e87b7b';
+            ctx.fillRect(ix + 22, iy + 9, 3, 2); // Blush
 
-            // Pixel Legs & Running Shoes
-            ctx.fillStyle = this.color;
-            if (!this.grounded) {
-                ctx.fillRect(ix + 10, iy + 34, 6, 8);
-                ctx.fillRect(ix + 20, iy + 34, 6, 8);
-            } else if (this.legState) {
-                ctx.fillRect(ix + 8, iy + 34, 6, 12);
-                ctx.fillRect(ix + 22, iy + 34, 6, 8);
+            // 10. Front Arm (swinging in motion)
+            ctx.fillStyle = mainColor;
+            if (this.legState) {
+                ctx.fillRect(ix + 24, iy + 14, 6, 12);
             } else {
-                ctx.fillRect(ix + 8, iy + 34, 6, 8);
-                ctx.fillRect(ix + 22, iy + 34, 6, 12);
+                ctx.fillRect(ix + 6, iy + 14, 6, 12);
             }
 
-            // Name Tag above character head (Pixel font style)
+            // 11. Floating Pixel Name Tag with Drop Shadow
             ctx.font = "10px 'Press Start 2P', monospace";
             ctx.textAlign = "center";
-            ctx.fillStyle = this.color;
-            ctx.fillText(this.name, ix + 18, iy - 12);
+            ctx.fillStyle = '#0a140b';
+            ctx.fillText(this.name, ix + 19, iy - 13);
+            ctx.fillStyle = accentColor;
+            ctx.fillText(this.name, ix + 18, iy - 14);
 
             ctx.restore();
         }
@@ -714,37 +792,136 @@ function mulberry32(a: number) {
         const dt = Math.min((timestamp - engine.lastTime) / 1000, 0.1);
         engine.lastTime = timestamp;
 
-        // 1. Draw Nature Forest Sky
+        // --- 1. DYNAMIC DAY / NIGHT CYCLE (60s Full Cycle: Day -> Sunset -> Night -> Dawn) ---
+        if (engine.gameRunning) {
+            engine.dayNightTimer = (engine.dayNightTimer || 0) + dt;
+        }
+        const cycleProgress = ((engine.dayNightTimer || 0) % 60) / 60; // 0.0 -> 1.0
+
+        let topSky: string, midSky: string, botSky: string;
+        let nightAlpha = 0;
+
+        if (cycleProgress < 0.35) {
+            // DAY PHASE
+            topSky = '#0f2214'; midSky = '#1a3b2b'; botSky = '#2d5a3e';
+            nightAlpha = 0;
+        } else if (cycleProgress < 0.45) {
+            // SUNSET / DUSK PHASE
+            const f = (cycleProgress - 0.35) / 0.10;
+            topSky = lerpColor('#0f2214', '#261233', f);
+            midSky = lerpColor('#1a3b2b', '#5c2242', f);
+            botSky = lerpColor('#2d5a3e', '#b84e36', f);
+            nightAlpha = f * 0.8;
+        } else if (cycleProgress < 0.80) {
+            // NIGHT PHASE
+            topSky = '#050a14'; midSky = '#0c1626'; botSky = '#152438';
+            nightAlpha = 0.8;
+        } else {
+            // DAWN / SUNRISE PHASE
+            const f = (cycleProgress - 0.80) / 0.20;
+            topSky = lerpColor('#050a14', '#0f2214', f);
+            midSky = lerpColor('#0c1626', '#1a3b2b', f);
+            botSky = lerpColor('#152438', '#2d5a3e', f);
+            nightAlpha = (1 - f) * 0.8;
+        }
+
+        // Draw Dynamic Sky Gradient
         const skyGrad = ctx.createLinearGradient(0, 0, 0, GAME_CONFIG.GROUND_Y);
-        skyGrad.addColorStop(0, '#142416');
-        skyGrad.addColorStop(0.6, '#1e3a24');
-        skyGrad.addColorStop(1, '#2d5a3f');
+        skyGrad.addColorStop(0, topSky);
+        skyGrad.addColorStop(0.5, midSky);
+        skyGrad.addColorStop(1, botSky);
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Sun / Forest Canopy Glow
-        ctx.fillStyle = '#f4d160';
-        ctx.fillRect(canvas.width - 120, 30, 32, 32);
+        // --- 2. CELESTIAL BODIES (SUN & MOON) ---
+        const celestialAngle = (cycleProgress * Math.PI * 2) - Math.PI / 2;
+        const sunX = canvas.width / 2 + Math.cos(celestialAngle) * 360;
+        const sunY = GAME_CONFIG.GROUND_Y + Math.sin(celestialAngle) * 260;
 
-        // 2. Draw Pixel Art Forest Trees (Parallax Background)
-        ctx.fillStyle = '#172d1c';
-        for (let x = 0; x <= canvas.width; x += 30) {
-            const h = 50 + (x % 40);
-            ctx.fillRect(x, GAME_CONFIG.GROUND_Y - h, 20, h);
-            ctx.fillRect(x - 6, GAME_CONFIG.GROUND_Y - h + 10, 32, 14);
+        const moonAngle = celestialAngle + Math.PI;
+        const moonX = canvas.width / 2 + Math.cos(moonAngle) * 360;
+        const moonY = GAME_CONFIG.GROUND_Y + Math.sin(moonAngle) * 260;
+
+        // SUN (if above ground)
+        if (sunY < GAME_CONFIG.GROUND_Y + 40) {
+            ctx.fillStyle = '#f4d160';
+            ctx.fillRect(Math.floor(sunX - 18), Math.floor(sunY - 18), 36, 36);
+            ctx.fillStyle = 'rgba(255, 230, 100, 0.25)';
+            ctx.fillRect(Math.floor(sunX - 26), Math.floor(sunY - 26), 52, 52);
         }
 
-        // 3. Soil Ground
-        ctx.fillStyle = '#4a2e18';
+        // MOON (if above ground)
+        if (moonY < GAME_CONFIG.GROUND_Y + 40) {
+            ctx.fillStyle = '#d6e8ff';
+            ctx.fillRect(Math.floor(moonX - 16), Math.floor(moonY - 16), 32, 32);
+            ctx.fillStyle = '#9cb8d9';
+            ctx.fillRect(Math.floor(moonX - 8), Math.floor(moonY - 8), 10, 10);
+            ctx.fillRect(Math.floor(moonX + 2), Math.floor(moonY + 4), 6, 6);
+            ctx.fillStyle = 'rgba(214, 232, 255, 0.2)';
+            ctx.fillRect(Math.floor(moonX - 22), Math.floor(moonY - 22), 44, 44);
+        }
+
+        // NIGHT TWINKLING STARS
+        if (nightAlpha > 0.1) {
+            ctx.save();
+            for (let i = 0; i < STARS.length; i++) {
+                const star = STARS[i];
+                const twinkle = (Math.sin(timestamp * 0.004 + star.phase) + 1) * 0.5;
+                ctx.fillStyle = `rgba(224, 240, 255, ${twinkle * nightAlpha})`;
+                ctx.fillRect(Math.floor(star.x), Math.floor(star.y), star.size, star.size);
+            }
+            ctx.restore();
+        }
+
+        // --- 3. PARALLAX FOREST BACKGROUND ---
+        // Distant Mountains Silhouette
+        ctx.fillStyle = lerpColor('#0d1a0e', '#060d17', nightAlpha);
+        for (let x = 0; x <= canvas.width; x += 40) {
+            const h = 80 + Math.sin(x * 0.02) * 35;
+            ctx.fillRect(x, GAME_CONFIG.GROUND_Y - h, 42, h);
+        }
+
+        // Midground Pine Trees
+        ctx.fillStyle = lerpColor('#142a17', '#08121f', nightAlpha);
+        for (let x = 0; x <= canvas.width; x += 30) {
+            const h = 55 + (x % 35);
+            ctx.fillRect(x, GAME_CONFIG.GROUND_Y - h, 18, h);
+            ctx.fillRect(x - 6, GAME_CONFIG.GROUND_Y - h + 10, 30, 14);
+            ctx.fillRect(x - 10, GAME_CONFIG.GROUND_Y - h + 24, 38, 16);
+        }
+
+        // --- 4. DRIFTING FIREFLIES ---
+        if (nightAlpha > 0.2) {
+            ctx.save();
+            for (let i = 0; i < FIREFLIES.length; i++) {
+                const ff = FIREFLIES[i];
+                if (engine.gameRunning) {
+                    ff.x += ff.speedX * dt;
+                    ff.y += ff.speedY * dt;
+                    if (ff.x < 0) ff.x = canvas.width;
+                    if (ff.x > canvas.width) ff.x = 0;
+                    if (ff.y < 180) ff.y = 180;
+                    if (ff.y > GAME_CONFIG.GROUND_Y) ff.y = GAME_CONFIG.GROUND_Y;
+                }
+                const glow = (Math.sin(timestamp * 0.005 + ff.phase) + 1) * 0.5;
+                ctx.fillStyle = `rgba(168, 255, 62, ${glow * 0.9})`;
+                ctx.fillRect(Math.floor(ff.x), Math.floor(ff.y), 3, 3);
+            }
+            ctx.restore();
+        }
+
+        // --- 5. SOIL GROUND & GRASS BLADES ---
+        ctx.fillStyle = lerpColor('#4a2e18', '#1c120a', nightAlpha);
         ctx.fillRect(0, GAME_CONFIG.GROUND_Y, canvas.width, canvas.height - GAME_CONFIG.GROUND_Y);
 
-        ctx.fillStyle = '#438a22';
+        // Top Moss Turf
+        ctx.fillStyle = lerpColor('#438a22', '#1b3b0e', nightAlpha);
         ctx.fillRect(0, GAME_CONFIG.GROUND_Y, canvas.width, 8);
 
-        // Grass blades
-        ctx.fillStyle = '#73c242';
-        for (let x = 0; x <= canvas.width; x += 16) {
-            ctx.fillRect(x, GAME_CONFIG.GROUND_Y - 4, 6, 4);
+        // Individual Grass Blades
+        ctx.fillStyle = lerpColor('#73c242', '#2f5b1a', nightAlpha);
+        for (let x = 0; x <= canvas.width; x += 14) {
+            ctx.fillRect(x, GAME_CONFIG.GROUND_Y - 4, 5, 4);
         }
 
         // Ground Details
