@@ -176,18 +176,18 @@ const App: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#142416] text-[#e0f8cf] flex flex-col items-center pb-6 font-press-start selection:bg-[#438a22] selection:text-white">
-      
+    <div className="min-h-screen bg-[url('/fondoTronquitos.jfif')] bg-cover bg-center bg-no-repeat bg-fixed text-[#e0f8cf] flex flex-col items-center pb-6 font-press-start selection:bg-[#438a22] selection:text-white relative z-0">
+      {/* DARK OVERLAY FOR PERFECT READABILITY & CONTRAST */}
+      <div className="fixed inset-0 bg-[#0c180e]/80 pointer-events-none -z-10" />
+
       {/* FULL-WIDTH TOP NAVBAR / HEADER */}
-      <header className="w-full bg-[#1e3a24] border-b-4 border-[#2b180a] shadow-xl px-4 lg:px-8 py-3 mb-6 sticky top-0 z-40">
+      <header className="w-full bg-[#1e3a24]/95 border-b-4 border-[#2b180a] shadow-xl px-4 lg:px-8 py-3 mb-6 sticky top-0 z-40 backdrop-blur-xs">
         <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#7c4f2b] border-2 border-[#2b180a] flex items-center justify-center text-xl shadow-md">
-              🪵
-            </div>
+            <img src="/tronco.jfif" alt="Tronquito" className="w-10 h-10 object-cover border-2 border-[#2b180a] shadow-md rounded" />
             <div>
               <h1 className="text-sm md:text-lg font-pixel text-[#f4d160] pixel-text-shadow">
-                TRONCOS 3P
+                Tronquitos
               </h1>
               <p className="text-[9px] text-[#73c242] mt-0.5">JUEGO MULTIJUGADOR PIXEL ART</p>
             </div>
@@ -207,104 +207,106 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* 2-COLUMN MAIN LAYOUT: VERTICAL WEBCAMS SIDEBAR ON LEFT, ARENA/LOBBY IN CENTER */}
+      {/* MAIN CONTAINER LAYOUT */}
       <div className="w-full max-w-[1400px] px-4 flex-1 flex flex-col lg:flex-row gap-6 items-stretch justify-center">
         
-        {/* LEFT COLUMN: VERTICAL STACK OF 3 WEBCAM CARDS */}
-        <aside className="w-full lg:w-[280px] shrink-0 flex flex-col gap-3">
-          {[0, 1, 2].map((slotIdx) => {
-            const p = players.find(player => player.slot === slotIdx);
-            const style = slotStyles[slotIdx];
-            const isLocal = playerSlot !== null ? slotIdx === playerSlot : slotIdx === 0;
-            const remoteStream = remoteStreams[slotIdx];
+        {/* LEFT COLUMN: 3 WEBCAMS SIDEBAR (SHOWN ONLY DURING IN-GAME MATCH!) */}
+        {!inLobby && (
+          <aside className="w-full lg:w-[280px] shrink-0 flex flex-col gap-3">
+            {[0, 1, 2].map((slotIdx) => {
+              const p = players.find(player => player.slot === slotIdx);
+              const style = slotStyles[slotIdx];
+              const isLocal = playerSlot !== null ? slotIdx === playerSlot : slotIdx === 0;
+              const remoteStream = remoteStreams[slotIdx];
 
-            return (
-              <div
-                key={slotIdx}
-                className={`pixel-card p-3 flex flex-col gap-2 border-2 ${style.border}`}
-              >
-                {/* PLAYER HEADER & BADGE */}
-                <div className="flex items-center justify-between border-b-2 border-[#2b180a] pb-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 ${style.bg}`} />
-                    <span className={`text-[11px] ${style.text}`}>
-                      {p ? p.name : `P${slotIdx + 1}`}
-                    </span>
-                  </div>
-
-                  {/* PIXEL LIVES (❤️ ❤️ ❤️) */}
-                  <div className="flex items-center gap-1 text-[10px]">
-                    {[1, 2, 3].map((heart) => (
-                      <span key={heart} className={p && p.lives >= heart ? 'opacity-100' : 'opacity-20 grayscale'}>
-                        ❤️
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* WEBCAM VIDEO DISPLAY CONTAINER */}
-                <div className="relative w-full aspect-video bg-black border-2 border-[#2b180a] flex items-center justify-center overflow-hidden">
-                  {isLocal ? (
-                    /* LOCAL WEBCAM FEED */
-                    <video
-                      ref={localVideoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full h-full object-cover scale-x-[-1]"
-                    />
-                  ) : remoteStream ? (
-                    /* REMOTE PLAYER WEBCAM STREAM (WebRTC) */
-                    <video
-                      ref={(el) => {
-                        if (el && remoteStream && el.srcObject !== remoteStream) {
-                          el.srcObject = remoteStream;
-                        }
-                      }}
-                      autoPlay
-                      playsInline
-                      className="w-full h-full object-cover scale-x-[-1]"
-                    />
-                  ) : (
-                    /* AVATAR / BOT PREVIEW */
-                    <div className="flex flex-col items-center gap-1 text-center p-2">
-                      <div className="text-xl">
-                        {p?.isBot ? '🤖' : '📹'}
-                      </div>
-                      <span className="text-[8px] text-gray-400">
-                        {p?.isBot ? 'BOT SIMULADO' : p ? 'ESPERANDO CÁMARA...' : 'ESPERANDO JUGADOR...'}
+              return (
+                <div
+                  key={slotIdx}
+                  className={`pixel-card p-3 flex flex-col gap-2 border-2 ${style.border}`}
+                >
+                  {/* PLAYER HEADER & BADGE */}
+                  <div className="flex items-center justify-between border-b-2 border-[#2b180a] pb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2.5 h-2.5 ${style.bg}`} />
+                      <span className={`text-[11px] ${style.text}`}>
+                        {p ? p.name : `P${slotIdx + 1}`}
                       </span>
                     </div>
-                  )}
 
-                  {/* OVERLAY BADGE */}
-                  <div className="absolute top-1.5 left-1.5 bg-[#142416] px-1.5 py-0.5 text-[7px] text-[#f4d160] border border-[#2b180a]">
-                    {isLocal ? 'TU CÁMARA' : p ? p.name : 'DESCONECTADO'}
+                    {/* PIXEL LIVES (❤️ ❤️ ❤️) */}
+                    <div className="flex items-center gap-1 text-[10px]">
+                      {[1, 2, 3].map((heart) => (
+                        <span key={heart} className={p && p.lives >= heart ? 'opacity-100' : 'opacity-20 grayscale'}>
+                          ❤️
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* WEBCAM VIDEO DISPLAY CONTAINER */}
+                  <div className="relative w-full aspect-video bg-black border-2 border-[#2b180a] flex items-center justify-center overflow-hidden">
+                    {isLocal ? (
+                      /* LOCAL WEBCAM FEED */
+                      <video
+                        ref={localVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-full h-full object-cover scale-x-[-1]"
+                      />
+                    ) : remoteStream ? (
+                      /* REMOTE PLAYER WEBCAM STREAM (WebRTC) */
+                      <video
+                        ref={(el) => {
+                          if (el && remoteStream && el.srcObject !== remoteStream) {
+                            el.srcObject = remoteStream;
+                          }
+                        }}
+                        autoPlay
+                        playsInline
+                        className="w-full h-full object-cover scale-x-[-1]"
+                      />
+                    ) : (
+                      /* AVATAR / BOT PREVIEW */
+                      <div className="flex flex-col items-center gap-1 text-center p-2">
+                        <div className="text-xl">
+                          {p?.isBot ? '🤖' : '📹'}
+                        </div>
+                        <span className="text-[8px] text-gray-400">
+                          {p?.isBot ? 'BOT SIMULADO' : p ? 'ESPERANDO CÁMARA...' : 'ESPERANDO JUGADOR...'}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* OVERLAY BADGE */}
+                    <div className="absolute top-1.5 left-1.5 bg-[#142416] px-1.5 py-0.5 text-[7px] text-[#f4d160] border border-[#2b180a]">
+                      {isLocal ? 'TU CÁMARA' : p ? p.name : 'DESCONECTADO'}
+                    </div>
+                  </div>
+
+                  {/* PLAYER STATUS FOOTER */}
+                  <div className="flex items-center justify-between text-[8px] pt-0.5 text-gray-300">
+                    <span>ESTADO:</span>
+                    <span className={p && p.lives > 0 ? 'text-green-400' : 'text-red-500'}>
+                      {p ? (p.lives > 0 ? 'EN JUEGO' : 'ELIMINADO') : 'VACÍO'}
+                    </span>
                   </div>
                 </div>
+              );
+            })}
+          </aside>
+        )}
 
-                {/* PLAYER STATUS FOOTER */}
-                <div className="flex items-center justify-between text-[8px] pt-0.5 text-gray-300">
-                  <span>ESTADO:</span>
-                  <span className={p && p.lives > 0 ? 'text-green-400' : 'text-red-500'}>
-                    {p ? (p.lives > 0 ? 'EN JUEGO' : 'ELIMINADO') : 'VACÍO'}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </aside>
-
-        {/* CENTER / RIGHT COLUMN: PANTALLA DE JUEGO */}
+        {/* CENTER / RIGHT COLUMN: LOBBY OR GAME ARENA */}
         <div className="flex-1 w-full flex flex-col gap-3 items-center justify-between">
           
-          {/* PANTALLA DE JUEGO (LOBBY OR DINOGAME ARENA) */}
-          <main className="w-full flex-1 flex flex-col">
+          {/* PANTALLA DE JUEGO O SALA DE ESPERA */}
+          <main className="w-full flex-1 flex flex-col items-center justify-center">
             {inLobby ? (
-              <div className="w-full pixel-border-wood bg-[#1e3a24] p-6 md:p-8">
+              <div className="w-full max-w-lg pixel-border-wood bg-[#1e3a24]/95 p-6 md:p-8 shadow-2xl">
                 <div className="text-center mb-6">
                   <h2 className="text-base md:text-xl text-[#f4d160] pixel-text-shadow mb-3">
-                    🌲 SALA DE ESPERA (3P)
+                    🌲 SALA DE ESPERA (Tronquitos)
                   </h2>
                   <p className="text-[10px] text-[#73c242] leading-relaxed">
                     Ingresa tu nombre para unirte o llena con bots para jugar de inmediato.
@@ -348,44 +350,6 @@ const App: React.FC = () => {
                     >
                       UNIRSE A LA SALA 🪵
                     </button>
-
-                    <div className="pt-2 border-t-2 border-[#2b180a] text-center">
-                      <button
-                        onClick={() => setShowSettings(!showSettings)}
-                        className="text-[9px] text-[#73c242] hover:text-[#a3e282] underline cursor-pointer"
-                      >
-                        {showSettings ? '▲ OCULTAR CONFIGURACIÓN' : '▼ CONFIGURAR SERVIDOR (NETLIFY / RENDER)'}
-                      </button>
-                    </div>
-
-                    {showSettings && (
-                      <div className="p-4 bg-[#142416] border-2 border-[#2b180a] space-y-3">
-                        <div className="text-[8px] text-gray-400 leading-normal">
-                          Si alojas el juego en un hosting estático (ej. Netlify, Vercel), debes ingresar la URL de tu servidor Node.js/Render aquí abajo.
-                        </div>
-                        <div>
-                          <label className="block text-[8px] text-[#f4d160] mb-2">URL DEL SERVIDOR WEB/SOCKETS:</label>
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              value={serverUrl}
-                              onChange={(e) => setServerUrlState(e.target.value)}
-                              className="flex-1 bg-[#0c180e] border-2 border-[#2b180a] px-3 py-2 text-[9px] text-white outline-none focus:border-[#73c242]"
-                              placeholder="https://troncos-3p.onrender.com"
-                            />
-                            <button
-                              onClick={() => {
-                                socketService.setServerUrl(serverUrl);
-                                alert('Servidor configurado. Intentando reconectar...');
-                              }}
-                              className="px-3 py-2 bg-[#7c4f2b] text-white border-2 border-[#2b180a] text-[8px] active:translate-y-0.5 cursor-pointer font-bold"
-                            >
-                              GUARDAR
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   /* ROOM LOBBY SLOTS */
@@ -470,6 +434,26 @@ const App: React.FC = () => {
                     )}
                   </div>
                 )}
+
+                {/* LOCAL WEBCAM PREVIEW IN LOBBY (CENTERED BELOW FORM / SLOTS) */}
+                <div className="mt-6 pt-4 border-t-2 border-[#2b180a] flex flex-col items-center gap-3">
+                  <div className="text-[10px] text-[#f4d160] flex items-center gap-2 font-pixel">
+                    <span>📹 TU CÁMARA EN VIVO</span>
+                  </div>
+                  <div className="relative w-full max-w-sm aspect-video bg-black border-2 border-[#73c242] shadow-lg overflow-hidden">
+                    <video
+                      ref={localVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover scale-x-[-1]"
+                    />
+                    <div className="absolute top-2 left-2 bg-[#142416] px-2 py-0.5 text-[7px] text-[#38ef7d] border border-[#2b180a]">
+                      TU CÁMARA
+                    </div>
+                  </div>
+                  <p className="text-[8px] text-[#73c242] text-center">¡Prepárate frente a la cámara para saltar en la partida!</p>
+                </div>
               </div>
             ) : (
               /* GAME ARENA CANVAS */
