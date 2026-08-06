@@ -12,16 +12,27 @@ export interface PlayerInfo {
 
 class SocketService {
   private socket: Socket | null = null;
-  // In production: connect to same origin. In dev: connect to localhost:3001
-  private serverUrl: string = import.meta.env.DEV ? 'http://localhost:3001' : window.location.origin;
+
+  private getServerUrl(): string {
+    // In dev, connect to local server. In production, connect to same origin.
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+      return window.location.origin;
+    }
+    return 'http://localhost:3001';
+  }
 
   connect() {
     if (this.socket && this.socket.connected) return this.socket;
 
-    this.socket = io(this.serverUrl, {
-      transports: ['websocket', 'polling'],
-      reconnectionAttempts: 5,
-      timeout: 10000,
+    const url = this.getServerUrl();
+    console.log('[Socket] Connecting to:', url);
+
+    this.socket = io(url, {
+      transports: ['polling', 'websocket'],  // polling first = more reliable behind proxies
+      path: '/socket.io/',
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      timeout: 20000,
     });
 
     this.socket.on('connect', () => {

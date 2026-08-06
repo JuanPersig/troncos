@@ -1,29 +1,50 @@
 const express = require('express');
 const http = require('http');
 const path = require('path');
+const fs = require('fs');
 const { Server } = require('socket.io');
 
+const PORT = process.env.PORT || 3001;
+
 const app = express();
+
+// Health check endpoint (for Render/Railway diagnostics)
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', rooms: Object.keys(rooms).length });
+});
+
+// Serve built Vite frontend in production
+const distPath = path.join(__dirname, 'dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+}
+
+// Create HTTP server from Express
 const server = http.createServer(app);
+
+// Attach Socket.io AFTER creating the HTTP server
 const io = new Server(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
+  },
+  transports: ['websocket', 'polling'],
+  allowEIO3: true,
+  path: '/socket.io/'
+});
+
+// SPA fallback: ONLY for GET requests, and NOT for socket.io paths
+// This must be AFTER socket.io is attached
+app.get('/{*splat}', (req, res) => {
+  const indexPath = path.join(distPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).send('Build not found. Run npm run build first.');
   }
 });
 
-const PORT = process.env.PORT || 3001;
-
-// Serve built Vite frontend in production
-app.use(express.static(path.join(__dirname, 'dist')));
-
-// SPA fallback: serve index.html for any non-API, non-socket route
-app.use((req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-});
-
 // Room State Storage
-// rooms: { [roomCode]: { players: [ { id, name, slot, ready, lives, score } ], gameRunning: boolean, seed: number } }
 const rooms = {};
 
 function generateSeed() {
@@ -184,7 +205,6 @@ io.on('connection', (socket) => {
       player.lives = remainingLives;
       io.to(roomKey).emit('player-hit-update', { slot, remainingLives, players: room.players });
 
-      // Check if all players dead
       const alivePlayers = room.players.filter(p => p.lives > 0);
       if (alivePlayers.length === 0) {
         room.gameRunning = false;
@@ -246,6 +266,8 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`[Server] Troncos Multiplayer Server running on http://localhost:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`[Server] Troncos 3P running on port ${PORT}`);
+  console.log(`[Server] Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`[Server] Dist exists: ${fs.existsSync(distPath)}`);
 });
