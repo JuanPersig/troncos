@@ -3,58 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tronquitos - Juego Pixel Art Multijugador</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Jumping Friends — Minijuegos Multijugador Online</title>
+    <meta name="description" content="Jumping Friends: plataforma de minijuegos multijugador online con detección de movimiento por cámara. ¡Salta frente a tu webcam y compite con amigos!">
+    <meta name="theme-color" content="#142416">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              'press-start': ['"Press Start 2P"', 'cursive'],
-              'pixel': ['"Press Start 2P"', 'cursive'],
-            },
-            colors: {
-              nature: {
-                dark: '#142416',
-                forest: '#1e3a24',
-                leaf: '#438a22',
-                lightleaf: '#73c242',
-                wood: '#4a2e18',
-                bark: '#2b180a',
-                sand: '#d4a373',
-                yellow: '#f4d160',
-                cyan: '#38ef7d',
-                pink: '#ff4081',
-              }
-            }
-          }
-        }
-      }
-    </script>
-    <style>
-      body {
-        font-family: 'Press Start 2P', cursive;
-        background-color: #142416;
-        color: #e0f8cf;
-        image-rendering: pixelated;
-        overflow-x: hidden;
-      }
-      ::-webkit-scrollbar {
-        width: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #142416;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #438a22;
-        border: 2px solid #2b180a;
-      }
-    </style>
     <link rel="stylesheet" href="/index.css">
 </head>
 <body>
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="/src/index.tsx"></script>
 </body>
 </html>

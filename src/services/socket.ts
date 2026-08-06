@@ -1,14 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-
-export interface PlayerInfo {
-  id: string;
-  name: string;
-  slot: number;
-  ready: boolean;
-  lives: number;
-  score: number;
-  isBot?: boolean;
-}
+import { PlayerInfo } from '@/core/types';
 
 class SocketService {
   private socket: Socket | null = null;
@@ -19,7 +10,7 @@ class SocketService {
     
     // Check localStorage
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('troncos_server_url');
+      const stored = localStorage.getItem('jumping_friends_server_url');
       if (stored) return stored;
       
       // If we are on Netlify or similar static host, default to the Render backend (or let user set it)
@@ -38,10 +29,10 @@ class SocketService {
   setServerUrl(url: string) {
     const trimmed = url.trim();
     if (trimmed) {
-      localStorage.setItem('troncos_server_url', trimmed);
+      localStorage.setItem('jumping_friends_server_url', trimmed);
       this.customUrl = trimmed;
     } else {
-      localStorage.removeItem('troncos_server_url');
+      localStorage.removeItem('jumping_friends_server_url');
       this.customUrl = null;
     }
     this.disconnect();
@@ -84,6 +75,10 @@ class SocketService {
     this.getSocket().emit('join-room', { roomCode, name });
   }
 
+  leaveRoom(roomCode: string) {
+    this.getSocket().emit('leave-room', { roomCode });
+  }
+
   fillBots(roomCode: string) {
     this.getSocket().emit('fill-bots', { roomCode });
   }
@@ -96,20 +91,16 @@ class SocketService {
     this.getSocket().emit('start-game', { roomCode });
   }
 
-  sendJump(roomCode: string, slot: number) {
-    this.getSocket().emit('player-jump', { roomCode, slot });
-  }
-
-  sendObstacleSpawn(roomCode: string, obstacleData: any) {
-    this.getSocket().emit('spawn-obstacle', { roomCode, obstacleData });
-  }
-
-  sendHit(roomCode: string, slot: number, remainingLives: number) {
-    this.getSocket().emit('player-hit', { roomCode, slot, remainingLives });
+  selectGame(roomCode: string, gameId: string) {
+    this.getSocket().emit('select-game', { roomCode, gameId });
   }
 
   restartGame(roomCode: string) {
     this.getSocket().emit('restart-game', { roomCode });
+  }
+
+  sendGameEvent(roomCode: string, eventName: string, data: any) {
+    this.getSocket().emit('game-event', { roomCode, eventName, data });
   }
 
   disconnect() {
@@ -121,3 +112,4 @@ class SocketService {
 }
 
 export const socketService = new SocketService();
+export type { PlayerInfo };

@@ -1,4 +1,4 @@
-import { socketService } from './socket';
+import { socketService } from '@/services/socket';
 
 export class WebRTCManager {
   private localStream: MediaStream | null = null;

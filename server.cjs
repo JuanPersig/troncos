@@ -10,7 +10,7 @@ const app = express();
 
 // Health check endpoint (for Render/Railway diagnostics)
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', rooms: Object.keys(rooms).length });
+  res.json({ status: 'ok', app: 'Jumping Friends', rooms: Object.keys(rooms).length });
 });
 
 // Serve built Vite frontend in production
@@ -52,7 +52,7 @@ function generateSeed() {
 }
 
 io.on('connection', (socket) => {
-  console.log(`[Socket] Connected: ${socket.id}`);
+  console.log(`[JumpingFriends] Connected: ${socket.id}`);
 
   let currentRoom = null;
   let playerSlot = null;
@@ -66,21 +66,24 @@ io.on('connection', (socket) => {
         players: [],
         gameRunning: false,
         seed: generateSeed(),
-        hostId: socket.id
+        hostId: socket.id,
+        selectedGame: null,
+        maxPlayers: 3,
+        gameStartTime: null
       };
     }
 
     const room = rooms[roomKey];
 
-    if (room.players.length >= 3) {
-      socket.emit('error-message', 'Room is full (max 3 players)');
+    if (room.players.length >= room.maxPlayers) {
+      socket.emit('error-message', `Room is full (max ${room.maxPlayers} players)`);
       return;
     }
 
-    // Determine next available slot (0, 1, or 2)
+    // Determine next available slot (0 to maxPlayers - 1)
     const takenSlots = room.players.map(p => p.slot);
     let assignedSlot = 0;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < room.maxPlayers; i++) {
       if (!takenSlots.includes(i)) {
         assignedSlot = i;
         break;
@@ -103,22 +106,55 @@ io.on('connection', (socket) => {
 
     socket.join(roomKey);
 
-    console.log(`[Room ${roomKey}] ${playerObj.name} joined slot ${assignedSlot}`);
+    console.log(`[JumpingFriends] [Room ${roomKey}] ${playerObj.name} joined slot ${assignedSlot}`);
 
     // Notify user of successful join
     socket.emit('room-joined', {
       roomCode: roomKey,
       playerSlot: assignedSlot,
       players: room.players,
-      hostId: room.hostId
+      hostId: room.hostId,
+      selectedGame: room.selectedGame,
+      maxPlayers: room.maxPlayers
     });
 
     // Notify room of updated player list
     io.to(roomKey).emit('room-update', {
       players: room.players,
       hostId: room.hostId,
-      gameRunning: room.gameRunning
+      gameRunning: room.gameRunning,
+      selectedGame: room.selectedGame
     });
+  });
+
+  socket.on('leave-room', ({ roomCode }) => {
+    const roomKey = roomCode || currentRoom;
+    if (!roomKey || !rooms[roomKey]) return;
+    
+    const room = rooms[roomKey];
+    room.players = room.players.filter(p => p.id !== socket.id);
+    
+    console.log(`[JumpingFriends] [Room ${roomKey}] Player ${socket.id} explicitly left`);
+    
+    socket.leave(roomKey);
+    currentRoom = null;
+    playerSlot = null;
+
+    if (room.players.length === 0) {
+      console.log(`[JumpingFriends] Room ${roomKey} deleted (empty)`);
+      delete rooms[roomKey];
+    } else {
+      if (room.hostId === socket.id) {
+        room.hostId = room.players[0].id;
+        console.log(`[JumpingFriends] [Room ${roomKey}] Host migrated to ${room.hostId}`);
+      }
+      io.to(roomKey).emit('room-update', {
+        players: room.players,
+        hostId: room.hostId,
+        gameRunning: room.gameRunning,
+        selectedGame: room.selectedGame
+      });
+    }
   });
 
   socket.on('fill-bots', ({ roomCode }) => {
@@ -127,10 +163,10 @@ io.on('connection', (socket) => {
     const room = rooms[roomKey];
 
     const takenSlots = room.players.map(p => p.slot);
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < room.maxPlayers; i++) {
       if (!takenSlots.includes(i)) {
         room.players.push({
-          id: `bot-${i}`,
+          id: `bot-${i}-${Date.now()}`,
           name: `Bot ${i + 1}`,
           slot: i,
           ready: true,
@@ -144,7 +180,8 @@ io.on('connection', (socket) => {
     io.to(roomKey).emit('room-update', {
       players: room.players,
       hostId: room.hostId,
-      gameRunning: room.gameRunning
+      gameRunning: room.gameRunning,
+      selectedGame: room.selectedGame
     });
   });
 
@@ -159,7 +196,26 @@ io.on('connection', (socket) => {
       io.to(roomKey).emit('room-update', {
         players: room.players,
         hostId: room.hostId,
-        gameRunning: room.gameRunning
+        gameRunning: room.gameRunning,
+        selectedGame: room.selectedGame
+      });
+    }
+  });
+
+  socket.on('select-game', ({ roomCode, gameId }) => {
+    const roomKey = roomCode || currentRoom;
+    if (!roomKey || !rooms[roomKey]) return;
+    const room = rooms[roomKey];
+    
+    // Only host can select a game
+    if (room.hostId === socket.id) {
+      room.selectedGame = gameId;
+      console.log(`[JumpingFriends] [Room ${roomKey}] Game selected: ${gameId}`);
+      io.to(roomKey).emit('room-update', {
+        players: room.players,
+        hostId: room.hostId,
+        gameRunning: room.gameRunning,
+        selectedGame: room.selectedGame
       });
     }
   });
@@ -170,19 +226,29 @@ io.on('connection', (socket) => {
 
     const room = rooms[roomKey];
     room.gameRunning = true;
+    room.gameStartTime = Date.now();
     room.seed = generateSeed();
     room.players.forEach(p => {
       p.lives = 3;
       p.score = 0;
     });
 
-    console.log(`[Room ${roomKey}] Game Starting with seed ${room.seed}`);
+    console.log(`[JumpingFriends] [Room ${roomKey}] Game Starting with seed ${room.seed}`);
     io.to(roomKey).emit('game-started', {
       seed: room.seed,
       players: room.players
     });
   });
 
+  // Generic Game Event Relay
+  socket.on('game-event', ({ roomCode, eventName, data }) => {
+    const roomKey = roomCode || currentRoom;
+    if (!roomKey) return;
+    // Broadcasts to all OTHER players in room
+    socket.to(roomKey).emit('game-event', { eventName, data });
+  });
+
+  // Backward compatibility specific events
   socket.on('player-jump', ({ roomCode, slot }) => {
     const roomKey = roomCode || currentRoom;
     if (!roomKey) return;
@@ -208,7 +274,15 @@ io.on('connection', (socket) => {
       const alivePlayers = room.players.filter(p => p.lives > 0);
       if (alivePlayers.length === 0) {
         room.gameRunning = false;
+        const duration = Date.now() - (room.gameStartTime || Date.now());
+        console.log(`[JumpingFriends] [Room ${roomKey}] Game Over. Duration: ${duration}ms`);
+        
         io.to(roomKey).emit('game-over-all', { players: room.players });
+        io.to(roomKey).emit('game-results', {
+          gameId: room.selectedGame,
+          players: room.players,
+          duration: duration
+        });
       }
     }
   });
@@ -219,12 +293,14 @@ io.on('connection', (socket) => {
 
     const room = rooms[roomKey];
     room.gameRunning = true;
+    room.gameStartTime = Date.now();
     room.seed = generateSeed();
     room.players.forEach(p => {
       p.lives = 3;
       p.score = 0;
     });
 
+    console.log(`[JumpingFriends] [Room ${roomKey}] Game Restarted`);
     io.to(roomKey).emit('game-started', {
       seed: room.seed,
       players: room.players
@@ -254,21 +330,24 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log(`[Socket] Disconnected: ${socket.id}`);
+    console.log(`[JumpingFriends] Disconnected: ${socket.id}`);
     if (currentRoom && rooms[currentRoom]) {
       const room = rooms[currentRoom];
       room.players = room.players.filter(p => p.id !== socket.id);
 
       if (room.players.length === 0) {
+        console.log(`[JumpingFriends] Room ${currentRoom} deleted (empty)`);
         delete rooms[currentRoom];
       } else {
         if (room.hostId === socket.id) {
           room.hostId = room.players[0].id;
+          console.log(`[JumpingFriends] [Room ${currentRoom}] Host migrated to ${room.hostId}`);
         }
         io.to(currentRoom).emit('room-update', {
           players: room.players,
           hostId: room.hostId,
-          gameRunning: room.gameRunning
+          gameRunning: room.gameRunning,
+          selectedGame: room.selectedGame
         });
       }
     }
@@ -276,7 +355,7 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`[Server] Troncos 3P running on port ${PORT}`);
-  console.log(`[Server] Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`[Server] Dist exists: ${fs.existsSync(distPath)}`);
+  console.log(`[JumpingFriends] Server running on port ${PORT}`);
+  console.log(`[JumpingFriends] Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`[JumpingFriends] Dist exists: ${fs.existsSync(distPath)}`);
 });
