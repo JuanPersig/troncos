@@ -16,7 +16,9 @@ const PORT = process.env.PORT || 3001;
 
 // Serve built Vite frontend in production
 app.use(express.static(path.join(__dirname, 'dist')));
-app.get('*', (req, res) => {
+
+// SPA fallback: serve index.html for any non-API, non-socket route
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
