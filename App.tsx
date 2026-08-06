@@ -19,6 +19,8 @@ const App: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [gameStarted, setGameStarted] = useState(false);
+  const [serverUrl, setServerUrlState] = useState(() => socketService.getServerUrl());
+  const [showSettings, setShowSettings] = useState(false);
 
   // WebRTC Remote Video Streams
   const [remoteStreams, setRemoteStreams] = useState<Record<number, MediaStream>>({});
@@ -210,6 +212,44 @@ const App: React.FC = () => {
               >
                 UNIRSE A LA SALA 🪵
               </button>
+
+              <div className="pt-2 border-t-2 border-[#2b180a] text-center">
+                <button
+                  onClick={() => setShowSettings(!showSettings)}
+                  className="text-[9px] text-[#73c242] hover:text-[#a3e282] underline cursor-pointer"
+                >
+                  {showSettings ? '▲ OCULTAR CONFIGURACIÓN' : '▼ CONFIGURAR SERVIDOR (NETLIFY / RENDER)'}
+                </button>
+              </div>
+
+              {showSettings && (
+                <div className="p-4 bg-[#142416] border-2 border-[#2b180a] space-y-3">
+                  <div className="text-[8px] text-gray-400 leading-normal">
+                    Si alojas el juego en un hosting estático (ej. Netlify, Vercel), debes ingresar la URL de tu servidor Node.js/Render aquí abajo.
+                  </div>
+                  <div>
+                    <label className="block text-[8px] text-[#f4d160] mb-2">URL DEL SERVIDOR WEB/SOCKETS:</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={serverUrl}
+                        onChange={(e) => setServerUrlState(e.target.value)}
+                        className="flex-1 bg-[#0c180e] border-2 border-[#2b180a] px-3 py-2 text-[9px] text-white outline-none focus:border-[#73c242]"
+                        placeholder="https://troncos-3p.onrender.com"
+                      />
+                      <button
+                        onClick={() => {
+                          socketService.setServerUrl(serverUrl);
+                          alert('Servidor configurado. Intentando reconectar...');
+                        }}
+                        className="px-3 py-2 bg-[#7c4f2b] text-white border-2 border-[#2b180a] text-[8px] active:translate-y-0.5 cursor-pointer font-bold"
+                      >
+                        GUARDAR
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             /* ROOM LOBBY SLOTS */

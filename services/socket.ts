@@ -12,13 +12,40 @@ export interface PlayerInfo {
 
 class SocketService {
   private socket: Socket | null = null;
+  private customUrl: string | null = null;
 
-  private getServerUrl(): string {
-    // In dev, connect to local server. In production, connect to same origin.
-    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-      return window.location.origin;
+  getServerUrl(): string {
+    if (this.customUrl) return this.customUrl;
+    
+    // Check localStorage
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('troncos_server_url');
+      if (stored) return stored;
+      
+      // If we are on Netlify or similar static host, default to the Render backend (or let user set it)
+      if (window.location.hostname.includes('netlify.app') || window.location.hostname.includes('vercel.app')) {
+        // We can check if a default render URL is preferred, but let's fall back to location origin unless set.
+        return window.location.origin;
+      }
+      
+      if (window.location.hostname !== 'localhost') {
+        return window.location.origin;
+      }
     }
     return 'http://localhost:3001';
+  }
+
+  setServerUrl(url: string) {
+    const trimmed = url.trim();
+    if (trimmed) {
+      localStorage.setItem('troncos_server_url', trimmed);
+      this.customUrl = trimmed;
+    } else {
+      localStorage.removeItem('troncos_server_url');
+      this.customUrl = null;
+    }
+    this.disconnect();
+    this.connect();
   }
 
   connect() {
