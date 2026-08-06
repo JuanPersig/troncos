@@ -878,6 +878,11 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
             return;
         }
 
+        if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) {
+            engine.visionAnimationId = requestAnimationFrame(predictWebcam);
+            return;
+        }
+
         const now = performance.now();
         const timeSinceLast = now - visionRef.current.lastPredictionTime;
         const frameInterval = 1000 / GAME_CONFIG.VISION_FPS;
@@ -891,11 +896,9 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
         const state = visionRef.current;
         const { poseLandmarker } = state;
 
-        if (video.videoWidth > 0 && video.videoHeight > 0) {
-            if (outCanvas.width !== video.videoWidth || outCanvas.height !== video.videoHeight) {
-                outCanvas.width = video.videoWidth;
-                outCanvas.height = video.videoHeight;
-            }
+        if (outCanvas.width !== video.videoWidth || outCanvas.height !== video.videoHeight) {
+            outCanvas.width = video.videoWidth;
+            outCanvas.height = video.videoHeight;
         }
 
         const outCtx = outCanvas.getContext('2d', { alpha: true })!;
@@ -903,8 +906,12 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
         let didUpdate = false;
         if (state.lastVideoTime !== video.currentTime) {
             state.lastVideoTime = video.currentTime;
-            state.results = poseLandmarker.detectForVideo(video, now);
-            didUpdate = true;
+            try {
+                state.results = poseLandmarker.detectForVideo(video, now);
+                didUpdate = true;
+            } catch (err) {
+                console.warn('[MediaPipe] Detect error:', err);
+            }
         }
 
         outCtx.clearRect(0, 0, outCanvas.width, outCanvas.height);
@@ -1071,8 +1078,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
                 <span className="text-[#f4d160]">SALTO: CÁMARA O TECLADO (ESPACIO)</span>
             </div>
 
-            {/* HIDDEN MEDIAPIPE VIDEO HARNESS */}
-            <video ref={videoRef} autoPlay playsInline className="hidden"></video>
+            {/* HIDDEN MEDIAPIPE VIDEO HARNESS WITH REAL 320x240 DIMENSIONS */}
+            <video ref={videoRef} autoPlay playsInline width={320} height={240} className="absolute opacity-0 pointer-events-none -z-50 w-[320px] h-[240px]"></video>
             <canvas ref={outputCanvasRef} className="hidden"></canvas>
             <div ref={jumpSignalRef} className="hidden"></div>
         </div>
