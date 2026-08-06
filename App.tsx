@@ -176,24 +176,24 @@ const App: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[url('/fondoTronquitos.jfif')] bg-cover bg-center bg-no-repeat bg-fixed text-[#e0f8cf] flex flex-col items-center pb-6 font-press-start selection:bg-[#438a22] selection:text-white relative z-0">
+    <div className="min-h-screen bg-[url('/fondoTronquitos.jfif')] bg-cover bg-center bg-no-repeat bg-fixed text-[#e0f8cf] flex flex-col items-center justify-center p-3 md:p-6 font-press-start selection:bg-[#438a22] selection:text-white overflow-hidden relative z-0">
       {/* DARK OVERLAY FOR PERFECT READABILITY & CONTRAST */}
       <div className="fixed inset-0 bg-[#0c180e]/80 pointer-events-none -z-10" />
 
-      {/* FULL-WIDTH TOP NAVBAR / HEADER */}
-      <header className="w-full bg-[#1e3a24]/95 border-b-4 border-[#2b180a] shadow-xl px-4 lg:px-8 py-3 mb-6 sticky top-0 z-40 backdrop-blur-xs">
-        <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between">
-          {/* LOGO & TITLE (CLICK TO RETURN HOME/LOBBY) */}
-          <button
-            onClick={() => setInLobby(true)}
-            className="flex items-center gap-3 cursor-pointer group text-left outline-none bg-transparent border-none p-0"
-            title="Volver al Inicio (Sala de Espera)"
-          >
-            <img src="/tronco.png" alt="Tronquitos" className="w-10 h-10 object-contain drop-shadow-md group-hover:scale-105 transition-transform" />
-            <h1 className="text-base md:text-xl font-pixel text-[#f4d160] pixel-text-shadow group-hover:text-yellow-300 transition-colors">
-              Tronquitos
-            </h1>
-          </button>
+      {/* MASTER GROUPING CONTAINER (HEADER + MAIN ARENA CENTERED AS 1 UNIFIED BLOCK) */}
+      <div className="w-full max-w-[1400px] flex flex-col gap-4">
+        
+        {/* TOP PIXEL NAVBAR / HEADER */}
+        <header className="w-full flex items-center justify-between pixel-border-wood bg-[#1e3a24]/95 p-4 shadow-xl">
+          <div className="flex items-center gap-3">
+            <img src="/tronco.jfif" alt="Tronquito" className="w-10 h-10 object-cover border-2 border-[#2b180a] shadow-md rounded" />
+            <div>
+              <h1 className="text-sm md:text-lg font-pixel text-[#f4d160] pixel-text-shadow">
+                Tronquitos
+              </h1>
+              <p className="text-[9px] text-[#73c242] mt-0.5">JUEGO MULTIJUGADOR PIXEL ART</p>
+            </div>
+          </div>
 
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center gap-2 bg-[#142416] border-2 border-[#2b180a] px-3 py-2 text-[10px]">
@@ -206,11 +206,10 @@ const App: React.FC = () => {
               <span className="text-gray-200">{isConnected ? 'ONLINE' : 'OFFLINE'}</span>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* MAIN CONTAINER LAYOUT (TOP ALIGNED ITEMS-START FOR PERFECT HORIZONTAL SYMMETRY) */}
-      <div className="w-full max-w-[1400px] px-4 flex-1 flex flex-col lg:flex-row gap-6 items-start justify-center">
+        {/* 2-COLUMN MAIN LAYOUT (CENTERED VERTICALLY & HORIZONTALLY) */}
+        <div className="w-full flex flex-col lg:flex-row gap-6 items-center justify-center">
         
         {/* LEFT COLUMN: 3 WEBCAMS SIDEBAR (SHOWN ONLY DURING IN-GAME MATCH!) */}
         {!inLobby && (
@@ -472,6 +471,7 @@ const App: React.FC = () => {
 
         </div>
       </div>
+    </div>
 
       {/* COUNTDOWN OVERLAY */}
       {countdown !== null && (

@@ -68,15 +68,15 @@ interface GameEngineState {
 // --- CONSTANTS ---
 
 const GAME_CONFIG = {
-    CANVAS_WIDTH: 760,
-    CANVAS_HEIGHT: 570,
-    GROUND_Y: 450,
+    CANVAS_WIDTH: 800,
+    CANVAS_HEIGHT: 600,
+    GROUND_Y: 480,
     GRAVITY: 3600,
     JUMP_FORCE: 960,
     INITIAL_SPEED: 420,
     MAX_SPEED: 1250,
     SPEED_INCREMENT: 8,
-    PLAYER_GROUND_Y: 395,
+    PLAYER_GROUND_Y: 420,
     PLAYER_SPACING_X: [70, 135, 200], // X positions for P1, P2, P3
     PLAYER_COLORS: [
         { primary: '#38ef7d', secondary: '#11998e', shirt: '#00c2cb', tag: 'P1' },
@@ -1052,15 +1052,14 @@ function mulberry32(a: number) {
     }, [localStream]);
 
     return (
-        <div className="w-full flex flex-col items-center gap-3 relative">
-            
-            {/* GAME CANVAS ARENA (PIXEL ART WOOD BORDER SYMMETRICAL WITH SIDEBAR) */}
-            <div className="w-full max-w-[570px] aspect-[4/3] relative rounded-xl overflow-hidden pixel-border-wood bg-[#1e3a24] cursor-pointer shadow-2xl" onClick={triggerLocalJump}>
+        <div className="w-full flex flex-col items-center gap-3">
+            {/* GAME CANVAS ARENA (PIXEL ART WOOD BORDER WITH ASPECT 4:3 RATIO) */}
+            <div className="w-full max-w-4xl mx-auto aspect-[4/3] relative rounded-xl overflow-hidden cursor-pointer shadow-2xl" onClick={triggerLocalJump}>
                 <canvas
                     ref={canvasRef}
                     width={GAME_CONFIG.CANVAS_WIDTH}
                     height={GAME_CONFIG.CANVAS_HEIGHT}
-                    className="w-full h-full block bg-[#1e3a24] object-contain"
+                    className="w-full h-full object-contain bg-[#1e3a24] pixel-border-wood shadow-2xl block"
                 />
 
                 {/* MUTE BUTTON */}
@@ -1098,7 +1097,7 @@ function mulberry32(a: number) {
             </div>
 
             {/* STATUS INSTRUCTION BAR */}
-            <div className="w-full bg-[#1e3a24] pixel-border-green p-3 text-[10px] text-[#e0f8cf] font-pixel flex flex-col sm:flex-row items-center justify-between gap-2 text-center">
+            <div className="w-full max-w-4xl bg-[#1e3a24] pixel-border-green p-3 text-[10px] text-[#e0f8cf] font-pixel flex flex-col sm:flex-row items-center justify-between gap-2 text-center">
                 <span>🌲 {status}</span>
                 <span className="text-[#f4d160]">SALTO: CÁMARA O TECLADO (ESPACIO)</span>
             </div>
