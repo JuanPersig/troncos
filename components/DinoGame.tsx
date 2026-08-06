@@ -504,9 +504,10 @@ interface DinoGameProps {
     playerList: PlayerInfo[];
     isHost: boolean;
     isCountdownActive?: boolean;
+    localStream?: MediaStream | null;
 }
 
-const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, isHost, isCountdownActive = false }) => {
+const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, isHost, isCountdownActive = false, localStream = null }) => {
     // --- REFS ---
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
