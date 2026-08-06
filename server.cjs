@@ -232,16 +232,25 @@ io.on('connection', (socket) => {
   });
 
   // WebRTC Signaling Relay
-  socket.on('webrtc-offer', ({ targetId, offer, fromSlot }) => {
-    io.to(targetId).emit('webrtc-offer', { fromId: socket.id, fromSlot, offer });
+  socket.on('webrtc-offer', (data = {}) => {
+    const { targetId, offer, fromSlot } = data || {};
+    if (targetId && offer) {
+      io.to(targetId).emit('webrtc-offer', { fromId: socket.id, fromSlot, offer });
+    }
   });
 
-  socket.on('webrtc-answer', ({ targetId, answer, fromSlot }) => {
-    io.to(targetId).emit('webrtc-answer', { fromId: socket.id, fromSlot, answer });
+  socket.on('webrtc-answer', (data = {}) => {
+    const { targetId, answer, fromSlot } = data || {};
+    if (targetId && answer) {
+      io.to(targetId).emit('webrtc-answer', { fromId: socket.id, fromSlot, answer });
+    }
   });
 
-  socket.on('webrtc-ice-candidate', ({ targetId, candidate, fromSlot }) => {
-    io.to(targetId).emit('webrtc-ice-candidate', { fromId: socket.id, fromSlot, candidate });
+  socket.on('webrtc-ice-candidate', (data = {}) => {
+    const { targetId, candidate, fromSlot } = data || {};
+    if (targetId && candidate) {
+      io.to(targetId).emit('webrtc-ice-candidate', { fromId: socket.id, fromSlot, candidate });
+    }
   });
 
   socket.on('disconnect', () => {

@@ -32,52 +32,57 @@ const App: React.FC = () => {
   useEffect(() => {
     const socket = socketService.connect();
 
-    socket.on('connect', () => {
-      setIsConnected(true);
-    });
-
-    socket.on('disconnect', () => {
-      setIsConnected(false);
-    });
-
-    socket.on('error-message', (msg: string) => {
+    const onConnect = () => setIsConnected(true);
+    const onDisconnect = () => setIsConnected(false);
+    const onErrorMsg = (msg: string) => {
       setErrorMsg(msg);
       setTimeout(() => setErrorMsg(''), 4000);
-    });
+    };
 
-    socket.on('room-joined', ({ playerSlot, players, hostId }) => {
+    const onRoomJoined = ({ playerSlot, players, hostId }: any) => {
       setPlayerSlot(playerSlot);
       setPlayers(players);
       setHostId(hostId);
       setErrorMsg('');
-      
-      // Initialize WebRTC signaling
       webRTCManager.initSignaling(playerSlot);
-    });
+    };
 
-    socket.on('room-update', ({ players, hostId, gameRunning }) => {
+    const onRoomUpdate = ({ players, hostId, gameRunning }: any) => {
       setPlayers(players);
       setHostId(hostId);
-      if (gameRunning && !gameStarted) {
+      if (gameRunning) {
         setCountdown(3);
         setInLobby(false);
       }
-    });
+    };
 
-    socket.on('game-started', ({ seed, players }) => {
+    const onGameStarted = ({ seed, players }: any) => {
       setPlayers(players);
       setCountdown(3);
       setInLobby(false);
-    });
+    };
+
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    socket.on('error-message', onErrorMsg);
+    socket.on('room-joined', onRoomJoined);
+    socket.on('room-update', onRoomUpdate);
+    socket.on('game-started', onGameStarted);
 
     const unsubscribeRemoteStream = webRTCManager.onRemoteStream((slot, stream) => {
       setRemoteStreams(prev => ({ ...prev, [slot]: stream }));
     });
 
     return () => {
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+      socket.off('error-message', onErrorMsg);
+      socket.off('room-joined', onRoomJoined);
+      socket.off('room-update', onRoomUpdate);
+      socket.off('game-started', onGameStarted);
       unsubscribeRemoteStream();
     };
-  }, [gameStarted]);
+  }, []);
 
   // Handle countdown
   useEffect(() => {
@@ -96,8 +101,6 @@ const App: React.FC = () => {
     if (playerSlot === null || players.length === 0) return;
     
     players.forEach(p => {
-      // Only initiate offer to players with smaller slots to prevent collisions
-      // (e.g. P3 initiates to P2 and P1; P2 initiates to P1)
       if (p.slot < playerSlot && !p.isBot) {
         webRTCManager.connectToPeer(p.id, p.slot, playerSlot);
       }
@@ -115,10 +118,6 @@ const App: React.FC = () => {
         activeStream = stream;
         setLocalStream(stream);
         webRTCManager.setLocalStream(stream);
-
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-        }
       } catch (e) {
         console.warn('Webcam permission not granted or unavailable', e);
       }
@@ -132,6 +131,13 @@ const App: React.FC = () => {
       }
     };
   }, []);
+
+  // Always keep localVideoRef synced with localStream whenever DOM element remounts
+  useEffect(() => {
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+    }
+  }, [localStream, playerSlot, inLobby]);
 
   const handleJoinRoom = () => {
     if (!playerName.trim()) return;

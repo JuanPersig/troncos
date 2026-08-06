@@ -23,6 +23,10 @@ export class WebRTCManager {
   initSignaling(localSlot: number) {
     const socket = socketService.getSocket();
 
+    socket.off('webrtc-offer');
+    socket.off('webrtc-answer');
+    socket.off('webrtc-ice-candidate');
+
     socket.on('webrtc-offer', async ({ fromId, fromSlot, offer }) => {
       console.log(`[WebRTC] Received offer from ${fromId} (slot ${fromSlot})`);
       const pc = this.createPeerConnection(fromId, fromSlot, localSlot);
@@ -37,10 +41,10 @@ export class WebRTCManager {
       });
     });
 
-    socket.on('webrtc-answer', async ({ fromId, offer, answer }) => {
+    socket.on('webrtc-answer', async ({ fromId, answer }) => {
       console.log(`[WebRTC] Received answer from ${fromId}`);
       const pc = this.peerConnections.get(fromId);
-      if (pc) {
+      if (pc && pc.signalingState !== 'stable') {
         await pc.setRemoteDescription(new RTCSessionDescription(answer));
       }
     });
