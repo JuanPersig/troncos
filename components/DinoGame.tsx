@@ -68,16 +68,16 @@ interface GameEngineState {
 // --- CONSTANTS ---
 
 const GAME_CONFIG = {
-    CANVAS_WIDTH: 1080,
-    CANVAS_HEIGHT: 400,
-    GROUND_Y: 310,
+    CANVAS_WIDTH: 1200,
+    CANVAS_HEIGHT: 480,
+    GROUND_Y: 375,
     GRAVITY: 3600,
-    JUMP_FORCE: 940,
-    INITIAL_SPEED: 460,
-    MAX_SPEED: 1300,
+    JUMP_FORCE: 960,
+    INITIAL_SPEED: 480,
+    MAX_SPEED: 1350,
     SPEED_INCREMENT: 8,
-    PLAYER_GROUND_Y: 260,
-    PLAYER_SPACING_X: [90, 160, 230], // X positions for P1, P2, P3
+    PLAYER_GROUND_Y: 325,
+    PLAYER_SPACING_X: [110, 190, 270], // X positions for P1, P2, P3
     PLAYER_COLORS: [
         { primary: '#38ef7d', secondary: '#11998e', shirt: '#00c2cb', tag: 'P1' },
         { primary: '#ff4081', secondary: '#c2185b', shirt: '#ff80ab', tag: 'P2' },
@@ -249,17 +249,17 @@ class Tronco {
         this.type = type;
 
         if (type === 'large') {
-            this.width = 56;
-            this.height = 50;
-            this.y = GAME_CONFIG.GROUND_Y - 50;
+            this.width = 64;
+            this.height = 56;
+            this.y = GAME_CONFIG.GROUND_Y - 56;
         } else if (type === 'double') {
-            this.width = 86;
-            this.height = 40;
-            this.y = GAME_CONFIG.GROUND_Y - 40;
+            this.width = 96;
+            this.height = 44;
+            this.y = GAME_CONFIG.GROUND_Y - 44;
         } else {
-            this.width = 48;
-            this.height = 40;
-            this.y = GAME_CONFIG.GROUND_Y - 40;
+            this.width = 54;
+            this.height = 44;
+            this.y = GAME_CONFIG.GROUND_Y - 44;
         }
         this.active = true;
     }
