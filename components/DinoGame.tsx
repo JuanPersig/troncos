@@ -582,6 +582,19 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
         });
     }, [playerList]);
 
+// --- SEEDED PSEUDO-RANDOM NUMBER GENERATOR (Mulberry32) ---
+function mulberry32(a: number) {
+    return function() {
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+    // RNG Ref for synchronized obstacle spawning across all 3 players
+    const rngRef = useRef<() => number>(mulberry32(123456));
+
     // Socket Event Listeners for remote actions
     useEffect(() => {
         const socket = socketService.getSocket();
@@ -597,7 +610,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
         };
 
         const handleGameStarted = ({ seed, players }: { seed: number; players: PlayerInfo[] }) => {
-            resetGame();
+            resetGame(seed);
         };
 
         const handlePlayerHit = ({ slot, remainingLives }: { slot: number; remainingLives: number }) => {
@@ -626,7 +639,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
         engine.spawnTimer -= dt;
 
         if (engine.spawnTimer <= 0) {
-            const r = Math.random();
+            const rng = rngRef.current;
+            const r = rng();
             let type: 'single' | 'double' | 'large' = 'single';
             if (r > 0.75) type = 'double';
             else if (r > 0.5) type = 'large';
@@ -634,7 +648,7 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
             const tronco = getFromPool(engine.obstaclePool, () => new Tronco());
             tronco.spawn(GAME_CONFIG.CANVAS_WIDTH, type);
 
-            engine.spawnTimer = 1.4 + Math.random() * 1.6;
+            engine.spawnTimer = 1.4 + rng() * 1.6;
 
             if (engine.gameSpeed < GAME_CONFIG.MAX_SPEED) {
                 engine.gameSpeed += GAME_CONFIG.SPEED_INCREMENT;
@@ -798,7 +812,10 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
         engine.animationId = requestAnimationFrame(runGameLoop);
     };
 
-    const resetGame = () => {
+    const resetGame = (seed?: number) => {
+        if (seed !== undefined) {
+            rngRef.current = mulberry32(seed);
+        }
         const engine = engineRef.current;
 
         engine.obstaclePool.forEach(p => p.active = false);
