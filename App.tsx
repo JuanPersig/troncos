@@ -205,277 +205,286 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* LOBBY MODAL / OVERLAY */}
-      {inLobby ? (
-        <main className="w-full max-w-xl pixel-border-wood bg-[#1e3a24] p-6 md:p-8 my-auto">
-          <div className="text-center mb-6">
-            <h2 className="text-base md:text-xl text-[#f4d160] pixel-text-shadow mb-3">
-              🌲 SALA DE ESPERA (3P)
-            </h2>
-            <p className="text-[10px] text-[#73c242] leading-relaxed">
-              Ingresa tu nombre para unirte o llena con bots para jugar de inmediato.
-            </p>
-          </div>
+      {/* 2-COLUMN MAIN LAYOUT: VERTICAL WEBCAMS SIDEBAR ON LEFT, ARENA/LOBBY IN CENTER */}
+      <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6 items-start justify-center">
+        
+        {/* LEFT COLUMN: VERTICAL STACK OF 3 WEBCAM CARDS */}
+        <aside className="w-full lg:w-[280px] shrink-0 flex flex-col gap-3">
+          {[0, 1, 2].map((slotIdx) => {
+            const p = players.find(player => player.slot === slotIdx);
+            const style = slotStyles[slotIdx];
+            const isLocal = playerSlot !== null ? slotIdx === playerSlot : slotIdx === 0;
+            const remoteStream = remoteStreams[slotIdx];
 
-          {errorMsg && (
-            <div className="mb-4 p-3 bg-red-900/40 border-2 border-red-500 text-red-200 text-[10px] text-center">
-              {errorMsg}
-            </div>
-          )}
-
-          {playerSlot === null ? (
-            /* JOIN FORM */
-            <div className="space-y-5">
-              <div>
-                <label className="block text-[10px] text-[#f4d160] mb-2">NOMBRE DEL JUGADOR:</label>
-                <input
-                  type="text"
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
-                  className="w-full bg-[#142416] border-2 border-[#2b180a] px-4 py-3 text-xs text-white outline-none focus:border-[#73c242]"
-                  placeholder="Tu apodo"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] text-[#f4d160] mb-2">CÓDIGO DE SALA:</label>
-                <input
-                  type="text"
-                  value={roomCode}
-                  onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                  className="w-full bg-[#142416] border-2 border-[#2b180a] px-4 py-3 text-xs text-white outline-none focus:border-[#73c242] uppercase font-mono tracking-widest"
-                  placeholder="TRONCOS-1"
-                />
-              </div>
-
-              <button
-                onClick={handleJoinRoom}
-                className="w-full py-4 pixel-btn-green text-xs font-pixel uppercase cursor-pointer"
+            return (
+              <div
+                key={slotIdx}
+                className={`pixel-card p-3 flex flex-col gap-2 border-2 ${style.border}`}
               >
-                UNIRSE A LA SALA 🪵
-              </button>
+                {/* PLAYER HEADER & BADGE */}
+                <div className="flex items-center justify-between border-b-2 border-[#2b180a] pb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2.5 h-2.5 ${style.bg}`} />
+                    <span className={`text-[11px] ${style.text}`}>
+                      {p ? p.name : `P${slotIdx + 1}`}
+                    </span>
+                  </div>
 
-              <div className="pt-2 border-t-2 border-[#2b180a] text-center">
-                <button
-                  onClick={() => setShowSettings(!showSettings)}
-                  className="text-[9px] text-[#73c242] hover:text-[#a3e282] underline cursor-pointer"
-                >
-                  {showSettings ? '▲ OCULTAR CONFIGURACIÓN' : '▼ CONFIGURAR SERVIDOR (NETLIFY / RENDER)'}
-                </button>
+                  {/* PIXEL LIVES (❤️ ❤️ ❤️) */}
+                  <div className="flex items-center gap-1 text-[10px]">
+                    {[1, 2, 3].map((heart) => (
+                      <span key={heart} className={p && p.lives >= heart ? 'opacity-100' : 'opacity-20 grayscale'}>
+                        ❤️
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* WEBCAM VIDEO DISPLAY CONTAINER */}
+                <div className="relative w-full aspect-video bg-black border-2 border-[#2b180a] flex items-center justify-center overflow-hidden">
+                  {isLocal ? (
+                    /* LOCAL WEBCAM FEED */
+                    <video
+                      ref={localVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover scale-x-[-1]"
+                    />
+                  ) : remoteStream ? (
+                    /* REMOTE PLAYER WEBCAM STREAM (WebRTC) */
+                    <video
+                      ref={(el) => {
+                        if (el && remoteStream && el.srcObject !== remoteStream) {
+                          el.srcObject = remoteStream;
+                        }
+                      }}
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-cover scale-x-[-1]"
+                    />
+                  ) : (
+                    /* AVATAR / BOT PREVIEW */
+                    <div className="flex flex-col items-center gap-1 text-center p-2">
+                      <div className="text-xl">
+                        {p?.isBot ? '🤖' : '📹'}
+                      </div>
+                      <span className="text-[8px] text-gray-400">
+                        {p?.isBot ? 'BOT SIMULADO' : p ? 'ESPERANDO CÁMARA...' : 'ESPERANDO JUGADOR...'}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* OVERLAY BADGE */}
+                  <div className="absolute top-1.5 left-1.5 bg-[#142416] px-1.5 py-0.5 text-[7px] text-[#f4d160] border border-[#2b180a]">
+                    {isLocal ? 'TU CÁMARA' : p ? p.name : 'DESCONECTADO'}
+                  </div>
+                </div>
+
+                {/* PLAYER STATUS FOOTER */}
+                <div className="flex items-center justify-between text-[8px] pt-0.5 text-gray-300">
+                  <span>ESTADO:</span>
+                  <span className={p && p.lives > 0 ? 'text-green-400' : 'text-red-500'}>
+                    {p ? (p.lives > 0 ? 'EN JUEGO' : 'ELIMINADO') : 'VACÍO'}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </aside>
+
+        {/* CENTER / RIGHT COLUMN: LOBBY OR GAME ARENA */}
+        <main className="flex-1 w-full flex flex-col items-center justify-center">
+          {inLobby ? (
+            <div className="w-full max-w-xl pixel-border-wood bg-[#1e3a24] p-6 md:p-8">
+              <div className="text-center mb-6">
+                <h2 className="text-base md:text-xl text-[#f4d160] pixel-text-shadow mb-3">
+                  🌲 SALA DE ESPERA (3P)
+                </h2>
+                <p className="text-[10px] text-[#73c242] leading-relaxed">
+                  Ingresa tu nombre para unirte o llena con bots para jugar de inmediato.
+                </p>
               </div>
 
-              {showSettings && (
-                <div className="p-4 bg-[#142416] border-2 border-[#2b180a] space-y-3">
-                  <div className="text-[8px] text-gray-400 leading-normal">
-                    Si alojas el juego en un hosting estático (ej. Netlify, Vercel), debes ingresar la URL de tu servidor Node.js/Render aquí abajo.
-                  </div>
+              {errorMsg && (
+                <div className="mb-4 p-3 bg-red-900/40 border-2 border-red-500 text-red-200 text-[10px] text-center">
+                  {errorMsg}
+                </div>
+              )}
+
+              {playerSlot === null ? (
+                /* JOIN FORM */
+                <div className="space-y-5">
                   <div>
-                    <label className="block text-[8px] text-[#f4d160] mb-2">URL DEL SERVIDOR WEB/SOCKETS:</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={serverUrl}
-                        onChange={(e) => setServerUrlState(e.target.value)}
-                        className="flex-1 bg-[#0c180e] border-2 border-[#2b180a] px-3 py-2 text-[9px] text-white outline-none focus:border-[#73c242]"
-                        placeholder="https://troncos-3p.onrender.com"
-                      />
-                      <button
-                        onClick={() => {
-                          socketService.setServerUrl(serverUrl);
-                          alert('Servidor configurado. Intentando reconectar...');
-                        }}
-                        className="px-3 py-2 bg-[#7c4f2b] text-white border-2 border-[#2b180a] text-[8px] active:translate-y-0.5 cursor-pointer font-bold"
-                      >
-                        GUARDAR
-                      </button>
-                    </div>
+                    <label className="block text-[10px] text-[#f4d160] mb-2">NOMBRE DEL JUGADOR:</label>
+                    <input
+                      type="text"
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                      className="w-full bg-[#142416] border-2 border-[#2b180a] px-4 py-3 text-xs text-white outline-none focus:border-[#73c242]"
+                      placeholder="Tu apodo"
+                    />
                   </div>
+
+                  <div>
+                    <label className="block text-[10px] text-[#f4d160] mb-2">CÓDIGO DE SALA:</label>
+                    <input
+                      type="text"
+                      value={roomCode}
+                      onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                      className="w-full bg-[#142416] border-2 border-[#2b180a] px-4 py-3 text-xs text-white outline-none focus:border-[#73c242] uppercase font-mono tracking-widest"
+                      placeholder="TRONCOS-1"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleJoinRoom}
+                    className="w-full py-4 pixel-btn-green text-xs font-pixel uppercase cursor-pointer"
+                  >
+                    UNIRSE A LA SALA 🪵
+                  </button>
+
+                  <div className="pt-2 border-t-2 border-[#2b180a] text-center">
+                    <button
+                      onClick={() => setShowSettings(!showSettings)}
+                      className="text-[9px] text-[#73c242] hover:text-[#a3e282] underline cursor-pointer"
+                    >
+                      {showSettings ? '▲ OCULTAR CONFIGURACIÓN' : '▼ CONFIGURAR SERVIDOR (NETLIFY / RENDER)'}
+                    </button>
+                  </div>
+
+                  {showSettings && (
+                    <div className="p-4 bg-[#142416] border-2 border-[#2b180a] space-y-3">
+                      <div className="text-[8px] text-gray-400 leading-normal">
+                        Si alojas el juego en un hosting estático (ej. Netlify, Vercel), debes ingresar la URL de tu servidor Node.js/Render aquí abajo.
+                      </div>
+                      <div>
+                        <label className="block text-[8px] text-[#f4d160] mb-2">URL DEL SERVIDOR WEB/SOCKETS:</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={serverUrl}
+                            onChange={(e) => setServerUrlState(e.target.value)}
+                            className="flex-1 bg-[#0c180e] border-2 border-[#2b180a] px-3 py-2 text-[9px] text-white outline-none focus:border-[#73c242]"
+                            placeholder="https://troncos-3p.onrender.com"
+                          />
+                          <button
+                            onClick={() => {
+                              socketService.setServerUrl(serverUrl);
+                              alert('Servidor configurado. Intentando reconectar...');
+                            }}
+                            className="px-3 py-2 bg-[#7c4f2b] text-white border-2 border-[#2b180a] text-[8px] active:translate-y-0.5 cursor-pointer font-bold"
+                          >
+                            GUARDAR
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* ROOM LOBBY SLOTS */
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 gap-3">
+                    {[0, 1, 2].map((slotIdx) => {
+                      const p = players.find(player => player.slot === slotIdx);
+                      const style = slotStyles[slotIdx];
+                      const isLocal = slotIdx === playerSlot;
+
+                      return (
+                        <div
+                          key={slotIdx}
+                          className={`flex items-center justify-between p-4 bg-[#142416] border-2 ${p ? style.border : 'border-dashed border-[#2b180a]'}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 ${style.bg} text-black font-bold flex items-center justify-center text-xs`}>
+                              P{slotIdx + 1}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-white">
+                                  {p ? p.name : 'Slot Vacío'}
+                                </span>
+                                {isLocal && (
+                                  <span className="text-[8px] bg-[#438a22] text-white px-1.5 py-0.5">
+                                    TÚ
+                                  </span>
+                                )}
+                                {p?.isBot && (
+                                  <span className="text-[8px] bg-amber-800 text-amber-200 px-1.5 py-0.5">
+                                    BOT
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[8px] text-[#73c242] mt-1">
+                                {p ? (p.ready ? '✓ LISTO' : 'ESPERANDO...') : 'LIBRE'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {p && (
+                            <div className="text-[10px]">
+                              {p.ready ? (
+                                <span className="text-green-400">LISTO</span>
+                              ) : (
+                                <span className="text-yellow-400">PENDIENTE</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* ACTION BUTTONS */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {players.length < 3 && (
+                      <button
+                        onClick={handleFillBots}
+                        className="flex-1 py-3 pixel-btn-wood text-[10px] cursor-pointer"
+                      >
+                        🤖 LLENAR CON BOTS
+                      </button>
+                    )}
+
+                    <button
+                      onClick={handleToggleReady}
+                      className="flex-1 py-3 pixel-btn-green text-[10px] cursor-pointer"
+                    >
+                      {players.find(p => p.slot === playerSlot)?.ready ? 'CANCELAR' : '¡ESTOY LISTO!'}
+                    </button>
+                  </div>
+
+                  {isHost && (
+                    <button
+                      onClick={handleStartGame}
+                      className="w-full py-4 pixel-btn-green text-xs font-pixel uppercase cursor-pointer"
+                    >
+                      🚀 INICIAR PARTIDA
+                    </button>
+                  )}
                 </div>
               )}
             </div>
           ) : (
-            /* ROOM LOBBY SLOTS */
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 gap-3">
-                {[0, 1, 2].map((slotIdx) => {
-                  const p = players.find(player => player.slot === slotIdx);
-                  const style = slotStyles[slotIdx];
-                  const isLocal = slotIdx === playerSlot;
-
-                  return (
-                    <div
-                      key={slotIdx}
-                      className={`flex items-center justify-between p-4 bg-[#142416] border-2 ${p ? style.border : 'border-dashed border-[#2b180a]'}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 ${style.bg} text-black font-bold flex items-center justify-center text-xs`}>
-                          P{slotIdx + 1}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-white">
-                              {p ? p.name : 'Slot Vacío'}
-                            </span>
-                            {isLocal && (
-                              <span className="text-[8px] bg-[#438a22] text-white px-1.5 py-0.5">
-                                TÚ
-                              </span>
-                            )}
-                            {p?.isBot && (
-                              <span className="text-[8px] bg-amber-800 text-amber-200 px-1.5 py-0.5">
-                                BOT
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[8px] text-[#73c242] mt-1">
-                            {p ? (p.ready ? '✓ LISTO' : 'ESPERANDO...') : 'LIBRE'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {p && (
-                        <div className="text-[10px]">
-                          {p.ready ? (
-                            <span className="text-green-400">LISTO</span>
-                          ) : (
-                            <span className="text-yellow-400">PENDIENTE</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* ACTION BUTTONS */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                {players.length < 3 && (
-                  <button
-                    onClick={handleFillBots}
-                    className="flex-1 py-3 pixel-btn-wood text-[10px] cursor-pointer"
-                  >
-                    🤖 LLENAR CON BOTS
-                  </button>
-                )}
-
-                <button
-                  onClick={handleToggleReady}
-                  className="flex-1 py-3 pixel-btn-green text-[10px] cursor-pointer"
-                >
-                  {players.find(p => p.slot === playerSlot)?.ready ? 'CANCELAR' : '¡ESTOY LISTO!'}
-                </button>
-              </div>
-
-              {isHost && (
-                <button
-                  onClick={handleStartGame}
-                  className="w-full py-4 pixel-btn-green text-xs font-pixel uppercase cursor-pointer"
-                >
-                  🚀 INICIAR PARTIDA
-                </button>
-              )}
-            </div>
+            /* GAME ARENA CANVAS */
+            <DinoGame
+              roomCode={roomCode}
+              localSlot={playerSlot ?? 0}
+              playerList={players}
+              isHost={isHost}
+              isCountdownActive={countdown !== null}
+              localStream={localStream}
+            />
           )}
         </main>
-      ) : (
-        /* MAIN GAME & HUD DISPLAY */
-        <main className="w-full max-w-5xl flex flex-col items-center gap-6">
-          {/* GAME ARENA CANVAS */}
-          <DinoGame
-            roomCode={roomCode}
-            localSlot={playerSlot ?? 0}
-            playerList={players}
-            isHost={isHost}
-            isCountdownActive={countdown !== null}
-            localStream={localStream}
-          />
-        </main>
-      )}
+      </div>
 
-      {/* 3 PLAYER WEBCAM & HUD CARDS GRID (ALWAYS VISIBLE AT ALL TIMES) */}
-      <section className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-        {[0, 1, 2].map((slotIdx) => {
-          const p = players.find(player => player.slot === slotIdx);
-          const style = slotStyles[slotIdx];
-          const isLocal = playerSlot !== null ? slotIdx === playerSlot : slotIdx === 0;
-          const remoteStream = remoteStreams[slotIdx];
-
-          return (
-            <div
-              key={slotIdx}
-              className={`pixel-card p-4 flex flex-col gap-3 border-2 ${style.border}`}
-            >
-              {/* PLAYER HEADER & BADGE */}
-              <div className="flex items-center justify-between border-b-2 border-[#2b180a] pb-2">
-                <div className="flex items-center gap-2">
-                  <span className={`w-3 h-3 ${style.bg}`} />
-                  <span className={`text-xs ${style.text}`}>
-                    {p ? p.name : `P${slotIdx + 1}`}
-                  </span>
-                </div>
-
-                {/* PIXEL LIVES (❤️ ❤️ ❤️) */}
-                <div className="flex items-center gap-1 text-xs">
-                  {[1, 2, 3].map((heart) => (
-                    <span key={heart} className={p && p.lives >= heart ? 'opacity-100' : 'opacity-20 grayscale'}>
-                      ❤️
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* WEBCAM VIDEO DISPLAY CONTAINER */}
-              <div className="relative w-full aspect-video bg-black border-2 border-[#2b180a] flex items-center justify-center overflow-hidden">
-                {isLocal ? (
-                  /* LOCAL WEBCAM FEED */
-                  <video
-                    ref={localVideoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover scale-x-[-1]"
-                  />
-                ) : remoteStream ? (
-                  /* REMOTE PLAYER WEBCAM STREAM (WebRTC) */
-                  <video
-                    ref={(el) => {
-                      if (el && remoteStream && el.srcObject !== remoteStream) {
-                        el.srcObject = remoteStream;
-                      }
-                    }}
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-cover scale-x-[-1]"
-                  />
-                ) : (
-                  /* AVATAR / BOT PREVIEW */
-                  <div className="flex flex-col items-center gap-2 text-center p-3">
-                    <div className="text-2xl">
-                      {p?.isBot ? '🤖' : '📹'}
-                    </div>
-                    <span className="text-[8px] text-gray-400">
-                      {p?.isBot ? 'BOT SIMULADO' : p ? 'ESPERANDO CÁMARA...' : 'ESPERANDO JUGADOR...'}
-                    </span>
-                  </div>
-                )}
-
-                {/* OVERLAY BADGE */}
-                <div className="absolute top-2 left-2 bg-[#142416] px-2 py-0.5 text-[8px] text-[#f4d160] border border-[#2b180a]">
-                  {isLocal ? 'TU CÁMARA' : p ? p.name : 'DESCONECTADO'}
-                </div>
-              </div>
-
-              {/* PLAYER STATUS FOOTER */}
-              <div className="flex items-center justify-between text-[8px] pt-1 text-gray-300">
-                <span>ESTADO:</span>
-                <span className={p && p.lives > 0 ? 'text-green-400' : 'text-red-500'}>
-                  {p ? (p.lives > 0 ? 'EN JUEGO' : 'ELIMINADO') : 'VACÍO'}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </section>
+      {/* FOOTER INSTRUCTION BAR AT VERY BOTTOM OF THE ENTIRE PAGE */}
+      <footer className="w-full max-w-[1400px] mt-6 bg-[#1e3a24] pixel-border-green p-3 text-[10px] text-[#e0f8cf] font-pixel flex flex-col sm:flex-row items-center justify-between gap-2 text-center">
+        <span>🌲 ¡Salta frente a la cámara o presiona la BARRA ESPACIADORA para saltar los troncos!</span>
+        <span className="text-[#f4d160]">SALTO: CÁMARA O TECLADO (ESPACIO)</span>
+      </footer>
 
       {/* COUNTDOWN OVERLAY */}
       {countdown !== null && (
