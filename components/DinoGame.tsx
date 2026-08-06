@@ -503,9 +503,10 @@ interface DinoGameProps {
     localSlot: number;
     playerList: PlayerInfo[];
     isHost: boolean;
+    isCountdownActive?: boolean;
 }
 
-const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, isHost }) => {
+const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, isHost, isCountdownActive = false }) => {
     // --- REFS ---
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -564,6 +565,10 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
     useEffect(() => {
         mutedRef.current = isMuted;
     }, [isMuted]);
+
+    useEffect(() => {
+        engineRef.current.gameRunning = !isCountdownActive;
+    }, [isCountdownActive]);
 
     // Keep players updated when playerList prop changes
     useEffect(() => {

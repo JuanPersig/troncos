@@ -57,7 +57,15 @@ export class WebRTCManager {
     });
   }
 
+  hasConnection(targetId: string): boolean {
+    const pc = this.peerConnections.get(targetId);
+    if (!pc) return false;
+    return ['new', 'connecting', 'connected'].includes(pc.connectionState || 'new');
+  }
+
   async connectToPeer(targetId: string, targetSlot: number, localSlot: number) {
+    if (this.hasConnection(targetId)) return; // Already connected or connecting
+
     console.log(`[WebRTC] Initiating offer to ${targetId} (slot ${targetSlot})`);
     const socket = socketService.getSocket();
     const pc = this.createPeerConnection(targetId, targetSlot, localSlot);

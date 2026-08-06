@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [gameStarted, setGameStarted] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const [serverUrl, setServerUrlState] = useState(() => socketService.getServerUrl());
   const [showSettings, setShowSettings] = useState(false);
 
@@ -57,15 +58,15 @@ const App: React.FC = () => {
     socket.on('room-update', ({ players, hostId, gameRunning }) => {
       setPlayers(players);
       setHostId(hostId);
-      if (gameRunning) {
-        setGameStarted(true);
+      if (gameRunning && !gameStarted) {
+        setCountdown(3);
         setInLobby(false);
       }
     });
 
     socket.on('game-started', ({ seed, players }) => {
       setPlayers(players);
-      setGameStarted(true);
+      setCountdown(3);
       setInLobby(false);
     });
 
@@ -76,7 +77,32 @@ const App: React.FC = () => {
     return () => {
       unsubscribeRemoteStream();
     };
-  }, []);
+  }, [gameStarted]);
+
+  // Handle countdown
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setGameStarted(true);
+      setCountdown(null);
+    }
+  }, [countdown]);
+
+  // Auto-connect WebRTC cameras
+  useEffect(() => {
+    if (playerSlot === null || players.length === 0) return;
+    
+    players.forEach(p => {
+      // Only initiate offer to players with smaller slots to prevent collisions
+      // (e.g. P3 initiates to P2 and P1; P2 initiates to P1)
+      if (p.slot < playerSlot && !p.isBot) {
+        webRTCManager.connectToPeer(p.id, p.slot, playerSlot);
+      }
+    });
+  }, [players, playerSlot]);
 
   // Handle local camera preview stream
   useEffect(() => {
@@ -344,6 +370,7 @@ const App: React.FC = () => {
             localSlot={playerSlot ?? 0}
             playerList={players}
             isHost={isHost}
+            isCountdownActive={countdown !== null}
           />
 
           {/* 3 PLAYER WEBCAM & HUD CARDS GRID */}
@@ -431,6 +458,16 @@ const App: React.FC = () => {
             })}
           </section>
         </main>
+      )}
+
+      {/* COUNTDOWN OVERLAY */}
+      {countdown !== null && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center pointer-events-none">
+          <h2 className="text-6xl md:text-8xl text-[#f4d160] pixel-text-shadow mb-8 animate-ping">
+            {countdown > 0 ? countdown : '¡YA!'}
+          </h2>
+          <p className="text-sm md:text-base text-[#38ef7d] animate-pulse">¡Prepárate frente a la cámara!</p>
+        </div>
       )}
     </div>
   );
