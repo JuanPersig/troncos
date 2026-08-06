@@ -1,0 +1,73 @@
+/* Troncos Pixel Art Nature Styles */
+
+.pixel-border-wood {
+  border: 4px solid #2b180a;
+  box-shadow: 
+    inset -4px -4px 0px 0px #3e2312,
+    inset 4px 4px 0px 0px #7c4f2b,
+    0px 6px 0px 0px #1a0e05;
+}
+
+.pixel-border-green {
+  border: 4px solid #1e3a24;
+  box-shadow: 
+    inset -4px -4px 0px 0px #2d5a3f,
+    inset 4px 4px 0px 0px #5c9e6c,
+    0px 6px 0px 0px #0e1c11;
+}
+
+.pixel-btn-green {
+  background-color: #438a22;
+  color: #ffffff;
+  border: 4px solid #1e3a24;
+  box-shadow: 
+    inset -4px -4px 0px 0px #2d5e16,
+    inset 4px 4px 0px 0px #73c242,
+    0px 6px 0px 0px #0e1c11;
+  text-shadow: 2px 2px 0px #1e3a24;
+}
+
+.pixel-btn-green:hover {
+  background-color: #51a329;
+}
+
+.pixel-btn-green:active {
+  transform: translateY(4px);
+  box-shadow: 
+    inset -2px -2px 0px 0px #2d5e16,
+    inset 2px 2px 0px 0px #73c242,
+    0px 2px 0px 0px #0e1c11;
+}
+
+.pixel-btn-wood {
+  background-color: #7c4f2b;
+  color: #f4d160;
+  border: 4px solid #2b180a;
+  box-shadow: 
+    inset -4px -4px 0px 0px #4a2e18,
+    inset 4px 4px 0px 0px #a66d3b,
+    0px 6px 0px 0px #140b04;
+  text-shadow: 2px 2px 0px #2b180a;
+}
+
+.pixel-btn-wood:hover {
+  background-color: #8c5a32;
+}
+
+.pixel-btn-wood:active {
+  transform: translateY(4px);
+  box-shadow: 
+    inset -2px -2px 0px 0px #4a2e18,
+    inset 2px 2px 0px 0px #a66d3b,
+    0px 2px 0px 0px #140b04;
+}
+
+.pixel-card {
+  background-color: #1e3a24;
+  border: 4px solid #2b180a;
+  box-shadow: inset -4px -4px 0px 0px #142416, inset 4px 4px 0px 0px #386b43, 0px 6px 0px 0px #000000;
+}
+
+.pixel-text-shadow {
+  text-shadow: 2px 2px 0px #000000;
+}
