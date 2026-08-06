@@ -55,7 +55,7 @@ class SocketService {
     console.log('[Socket] Connecting to:', url);
 
     this.socket = io(url, {
-      transports: ['polling', 'websocket'],  // polling first = more reliable behind proxies
+      transports: ['websocket', 'polling'],  // WebSocket first = ultra-low latency (<30ms)
       path: '/socket.io/',
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,

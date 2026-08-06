@@ -838,8 +838,8 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
                 if (!mutedRef.current) SoundSynth.playJump();
                 socketService.sendJump(roomCode, localSlot);
             }
-        } else if (!engine.gameRunning && engine.canRestart) {
-            resetGame();
+        } else if (!engine.gameRunning && engine.canRestart && isHost) {
+            socketService.restartGame(roomCode);
         }
     };
 
@@ -1062,12 +1062,18 @@ const DinoGame: React.FC<DinoGameProps> = ({ roomCode, localSlot, playerList, is
                         <p className="text-yellow-300 font-pixel text-xs mb-6">
                             PUNTAJE: <span className="text-[#38ef7d]">{score}</span>
                         </p>
-                        <button
-                            onClick={(e) => { e.stopPropagation(); resetGame(); }}
-                            className="px-6 py-3 pixel-btn-green font-pixel text-xs rounded-none cursor-pointer"
-                        >
-                            REINICIAR PARTIDA
-                        </button>
+                        {isHost ? (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); socketService.restartGame(roomCode); }}
+                                className="px-6 py-3 pixel-btn-green font-pixel text-xs rounded-none cursor-pointer"
+                            >
+                                🚀 REINICIAR PARTIDA (ADMIN)
+                            </button>
+                        ) : (
+                            <p className="text-xs text-gray-400 font-pixel animate-pulse">
+                                ESPERANDO QUE EL ANFITRIÓN REINICIE...
+                            </p>
+                        )}
                     </div>
                 )}
             </div>
